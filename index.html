@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>店員機画面</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .status-dropdown {
+            width: 100%;
+            padding: 5px;
+        }
+        .actions button {
+            margin-right: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .history-log {
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #f9f9f9;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>注文管理</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>内容</th>
+                <th>ステータス</th>
+                <th>履歴</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>001</td>
+                <td>商品A x 2, 商品B x 1</td>
+                <td>
+                    <select class="status-dropdown" onchange="if(this.value === 'other') { prompt('ステータスを入力してください'); }">
+                        <option value="new">新規受付</option>
+                        <option value="preparing">準備中</option>
+                        <option value="ready" selected>呼び出し済み</option>
+                        <option value="completed">完了</option>
+                        <option value="canceled">キャンセル</option>
+                        <option value="other">その他...</option>
+                    </select>
+                </td>
+                <td>
+                    <button onclick="toggleHistory('history-001')">表示/非表示</button>
+                    <div id="history-001" class="history-log" style="display:none;">
+                        <p>2024/06/05 10:00: 新規受付</p>
+                        <p>2024/06/05 10:05: 準備中</p>
+                        <p>2024/06/05 10:15: 呼び出し済み</p>
+                    </div>
+                </td>
+                <td class="actions">
+                    <button onclick="alert('「001」の支払い完了処理を実行します')">支払い完了</button>
+                </td>
+            </tr>
+            <tr>
+                <td>002</td>
+                <td>商品C x 1</td>
+                <td>
+                    <select class="status-dropdown" onchange="if(this.value === 'other') { prompt('ステータスを入力してください'); }">
+                        <option value="new" selected>新規受付</option>
+                        <option value="preparing">準備中</option>
+                        <option value="ready">呼び出し済み</option>
+                        <option value="completed">完了</option>
+                        <option value="canceled">キャンセル</option>
+                        <option value="other">その他...</option>
+                    </select>
+                </td>
+                <td>
+                    <button onclick="toggleHistory('history-002')">表示/非表示</button>
+                    <div id="history-002" class="history-log" style="display:none;">
+                        <p>2024/06/05 11:00: 新規受付</p>
+                    </div>
+                </td>
+                <td class="actions">
+                    <button onclick="alert('「002」の支払い完了処理を実行します')">支払い完了</button>
+                </td>
+            </tr>
+            </tbody>
+    </table>
+
+    <script>
+        function toggleHistory(historyId) {
+            const historyDiv = document.getElementById(historyId);
+            if (historyDiv.style.display === "none") {
+                historyDiv.style.display = "block";
+            } else {
+                historyDiv.style.display = "none";
+            }
+        }
+    </script>
+
+</body>
+</html>
