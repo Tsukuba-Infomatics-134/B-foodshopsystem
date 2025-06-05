@@ -25,11 +25,6 @@
             width: 100%;
             padding: 5px;
         }
-        .actions button {
-            margin-right: 5px;
-            padding: 8px 12px;
-            cursor: pointer;
-        }
         .history-log {
             border: 1px solid #eee;
             padding: 10px;
@@ -51,7 +46,6 @@
                 <th>内容</th>
                 <th>ステータス</th>
                 <th>履歴</th>
-                <th>操作</th>
             </tr>
         </thead>
         <tbody>
@@ -76,9 +70,6 @@
                         <p>2024/06/05 10:15: 呼び出し済み</p>
                     </div>
                 </td>
-                <td class="actions">
-                    <button onclick="alert('「001」の支払い完了処理を実行します')">支払い完了</button>
-                </td>
             </tr>
             <tr>
                 <td>002</td>
@@ -98,9 +89,6 @@
                     <div id="history-002" class="history-log" style="display:none;">
                         <p>2024/06/05 11:00: 新規受付</p>
                     </div>
-                </td>
-                <td class="actions">
-                    <button onclick="alert('「002」の支払い完了処理を実行します')">支払い完了</button>
                 </td>
             </tr>
             </tbody>
