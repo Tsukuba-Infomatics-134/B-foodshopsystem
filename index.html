@@ -1,113 +1,149 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>食糧販売 予約管理システム</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>食糧販売 予約管理システム プロトタイプ Ver.4</title>
   <style>
+    /* --- 基本スタイル --- */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: #f4f5f7;
       margin: 0;
       padding: 15px;
       color: #172b4d;
+      overflow-x: hidden;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
 
+    /* --- レイアウト --- */
     .main-container {
       display: flex;
-      gap: 20px;
-      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
     }
 
     .board {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-      flex: 1;
-      overflow-x: auto;
+      display: flex;
+      gap: 10px;
+      width: 80%; /* 状態カラム部分の全体幅 */
     }
 
     .column {
       background-color: #ebecf0;
       border-radius: 8px;
+      flex: 1; /* 均等に5分割 */
       padding: 10px;
-      min-width: 200px;
+      transition: background-color 0.2s ease;
     }
 
     .column h2 {
       font-size: 16px;
-      margin: 0 0 10px;
+      padding: 0 8px;
+      margin: 8px 0 10px;
     }
 
     .card-container {
-      min-height: 100px;
+      min-height: 90px;
+      padding-bottom: 5px;
     }
 
+    .column.drop-forbidden {
+      background-color: #ffcdd2;
+      border: 1px dashed #c62828;
+    }
+
+    /* --- カードスタイル --- */
     .card {
       background-color: #ffffff;
-      border-radius: 6px;
+      border-radius: 5px;
       padding: 10px;
       margin-bottom: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
       cursor: grab;
+    }
+
+    .card:hover {
+      box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
     }
 
     .card .card-id {
       font-weight: bold;
-      margin-bottom: 4px;
+      font-size: 14px;
+      margin-bottom: 5px;
     }
 
     .card .card-custom-status {
       display: none;
+      padding: 2px 8px;
       font-size: 12px;
-      padding: 2px 6px;
-      background-color: #666;
+      font-weight: bold;
+      background-color: #6c757d;
       color: white;
-      border-radius: 8px;
-      margin-bottom: 6px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .card .card-content {
+      font-size: 14px;
+      line-height: 1.4;
+      margin-top: 5px;
     }
 
     .card.dragging {
-      opacity: 0.6;
+      opacity: 0.5;
+      transform: rotate(3deg);
+      cursor: grabbing;
     }
 
+    /* --- 履歴ログ --- */
     .history-log {
-      width: 300px;
-      background-color: #fff;
+      background-color: #ffffff;
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      width: 20%; /* 全体の20% */
       max-height: calc(100vh - 60px);
       overflow-y: auto;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
     }
 
     .history-log h2 {
       font-size: 16px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #ebecf0;
       padding-bottom: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+    }
+
+    .history-log ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
 
     .history-log li {
       font-size: 13px;
-      border-bottom: 1px solid #eee;
-      padding: 6px 0;
+      padding: 8px 5px;
+      border-bottom: 1px solid #f4f5f7;
+    }
+
+    .history-log li.highlight {
+      background-color: #e6f7ff;
     }
 
     .log-time {
-      color: #888;
-      font-size: 11px;
+      color: #5e6c84;
       display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
     }
 
-    .drop-forbidden {
-      background-color: #ffcdd2 !important;
-      border: 1px dashed #c62828;
+    .log-id {
+      font-weight: bold;
+      color: #0052cc;
     }
   </style>
 </head>
@@ -117,54 +153,66 @@
   <div class="main-container">
     <div class="board">
       <!-- 呼び出し中 -->
-      <div class="column" id="calling-column" data-status-name="呼び出し中">
+      <div id="calling-column" class="column" data-status-name="呼び出し中">
         <h2>📞 呼び出し中</h2>
         <div class="card-container">
           <div class="card" draggable="true">
             <div class="card-id">ID: #00125</div>
             <div class="card-custom-status"></div>
-            <div>・ハンバーグ弁当 x 1<br>・コールスロー x 1</div>
+            <div class="card-content">・ハンバーグ弁当 x 1<br>・コールスロー x 1</div>
           </div>
         </div>
       </div>
 
       <!-- 調理待ち -->
-      <div class="column" id="waiting-column" data-status-name="調理待ち">
+      <div id="waiting-column" class="column" data-status-name="調理待ち">
         <h2>🍳 調理待ち</h2>
         <div class="card-container">
           <div class="card" draggable="true">
             <div class="card-id">ID: #00126</div>
             <div class="card-custom-status"></div>
-            <div>・唐揚げ弁当(大) x 2</div>
+            <div class="card-content">・唐揚げ弁当(大) x 2</div>
+          </div>
+          <div class="card" draggable="true">
+            <div class="card-id">ID: #00127</div>
+            <div class="card-custom-status"></div>
+            <div class="card-content">・のり弁当 x 1<br>・味噌汁 x 1</div>
           </div>
         </div>
       </div>
 
       <!-- 調理済み -->
-      <div class="column" id="ready-column" data-status-name="調理済み">
+      <div id="ready-column" class="column" data-status-name="調理済み">
         <h2>✅ 調理済み</h2>
-        <div class="card-container"></div>
+        <div class="card-container">
+          <div class="card" draggable="true">
+            <div class="card-id">ID: #00121</div>
+            <div class="card-custom-status"></div>
+            <div class="card-content">・日替わりランチ x 1</div>
+          </div>
+        </div>
       </div>
 
       <!-- 受け渡し済み -->
-      <div class="column" id="delivered-column" data-status-name="受け渡し済み">
+      <div id="delivered-column" class="column" data-status-name="受け渡し済み">
         <h2>📦 受け渡し済み</h2>
         <div class="card-container"></div>
       </div>
 
       <!-- その他 -->
-      <div class="column" id="other-column" data-status-name="その他">
+      <div id="other-column" class="column" data-status-name="その他">
         <h2>📦 その他</h2>
         <div class="card-container">
           <div class="card" draggable="true">
             <div class="card-id">ID: #00119</div>
             <div class="card-custom-status">キャンセル</div>
-            <div>・ミックスフライ弁当 x 1</div>
+            <div class="card-content">・ミックスフライ弁当 x 1</div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 履歴ログ -->
     <div class="history-log">
       <h2>更新履歴</h2>
       <ul id="log-list"></ul>
@@ -180,62 +228,81 @@
     let originalColumn = null;
 
     function addLog(message) {
-      const li = document.createElement('li');
+      const listItem = document.createElement('li');
       const now = new Date();
-      li.innerHTML = `<span class="log-time">${now.toLocaleTimeString()}</span> ${message}`;
-      logList.prepend(li);
+      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      listItem.innerHTML = `<span class="log-time">${timeString}</span> ${message}`;
+      logList.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+      logList.prepend(listItem);
+      listItem.classList.add('highlight');
     }
 
     cards.forEach(card => {
       card.addEventListener('dragstart', () => {
         draggedCard = card;
         originalColumn = card.closest('.column');
-        card.classList.add('dragging');
+        setTimeout(() => card.classList.add('dragging'), 0);
       });
+
       card.addEventListener('dragend', () => {
-        card.classList.remove('dragging');
+        if (draggedCard) draggedCard.classList.remove('dragging');
+        columns.forEach(col => col.classList.remove('drop-forbidden'));
         draggedCard = null;
         originalColumn = null;
-        columns.forEach(col => col.classList.remove('drop-forbidden'));
       });
     });
 
     columns.forEach(column => {
       column.addEventListener('dragover', e => {
         e.preventDefault();
-        const isForbidden = originalColumn?.id === 'waiting-column' && column.id === 'ready-column';
-        column.classList.toggle('drop-forbidden', isForbidden);
+        if (originalColumn && originalColumn.id === 'waiting-column' && column.id === 'ready-column') {
+          column.classList.add('drop-forbidden');
+        } else {
+          column.classList.remove('drop-forbidden');
+        }
+      });
+
+      column.addEventListener('dragleave', () => {
+        column.classList.remove('drop-forbidden');
       });
 
       column.addEventListener('drop', e => {
         e.preventDefault();
         column.classList.remove('drop-forbidden');
+
         if (!draggedCard || !originalColumn || column === originalColumn) return;
+
         if (originalColumn.id === 'waiting-column' && column.id === 'ready-column') {
           alert('「調理待ち」から「調理済み」へは直接移動できません。');
           return;
         }
 
         const cardId = draggedCard.querySelector('.card-id').textContent;
+        const fromStatus = originalColumn.dataset.statusName;
         let toStatus = column.dataset.statusName;
+        let customStatus = "";
 
         if (column.id === 'other-column') {
-          const customStatus = prompt("ステータス（例：キャンセル）を入力：", "");
+          customStatus = prompt("ステータスを入力してください（例：キャンセル、保留など）", "");
           if (customStatus === null) return;
-          const badge = draggedCard.querySelector('.card-custom-status');
-          badge.textContent = customStatus;
-          badge.style.display = customStatus ? 'inline-block' : 'none';
-          if (customStatus) toStatus += ` (${customStatus})`;
+          const statusBadge = draggedCard.querySelector('.card-custom-status');
+          statusBadge.textContent = customStatus;
+          statusBadge.style.display = customStatus ? 'inline-block' : 'none';
+          if (customStatus) toStatus = `その他 (${customStatus})`;
         } else {
-          draggedCard.querySelector('.card-custom-status').style.display = 'none';
+          const statusBadge = draggedCard.querySelector('.card-custom-status');
+          statusBadge.textContent = '';
+          statusBadge.style.display = 'none';
         }
 
         column.querySelector('.card-container').appendChild(draggedCard);
-        addLog(`${cardId} を「${originalColumn.dataset.statusName}」から「${toStatus}」へ移動しました。`);
+        const logMessage = `<span class="log-id">${cardId}</span> を <strong>「${fromStatus}」</strong> から <strong>「${toStatus}」</strong> へ移動しました。`;
+        addLog(logMessage);
       });
     });
 
-    addLog("システム利用を開始しました。");
+    // 初回ログ
+    addLog("システムの利用を開始しました。");
   </script>
 </body>
 </html>
