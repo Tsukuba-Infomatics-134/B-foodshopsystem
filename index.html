@@ -1,63 +1,53 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>食糧販売 予約管理システム プロトタイプ Ver.4</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>食糧販売 予約管理システム Ver.5</title>
   <style>
-    /* --- 基本スタイル --- */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: #f4f5f7;
       margin: 0;
       padding: 15px;
       color: #172b4d;
-      overflow-x: hidden;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 15px;
     }
-
-    /* --- レイアウト --- */
     .main-container {
       display: flex;
       gap: 10px;
-      width: 100%;
+      height: calc(100vh - 80px);
+      overflow: hidden;
     }
-
     .board {
       display: flex;
+      flex: 5 5 0;
       gap: 10px;
-      width: 80%; /* 状態カラム部分の全体幅 */
+      overflow-x: auto;
     }
-
     .column {
       background-color: #ebecf0;
       border-radius: 8px;
-      flex: 1; /* 均等に5分割 */
       padding: 10px;
-      transition: background-color 0.2s ease;
+      flex: 0 0 16.66%;
+      display: flex;
+      flex-direction: column;
     }
-
     .column h2 {
       font-size: 16px;
-      padding: 0 8px;
       margin: 8px 0 10px;
+      padding: 0 8px;
+      flex-shrink: 0;
     }
-
     .card-container {
-      min-height: 90px;
-      padding-bottom: 5px;
+      max-height: 500px;
+      overflow-y: auto;
+      padding-right: 4px;
+      flex-grow: 1;
     }
-
-    .column.drop-forbidden {
-      background-color: #ffcdd2;
-      border: 1px dashed #c62828;
-    }
-
-    /* --- カードスタイル --- */
     .card {
       background-color: #ffffff;
       border-radius: 5px;
@@ -66,17 +56,14 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
       cursor: grab;
     }
-
     .card:hover {
       box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
     }
-
     .card .card-id {
       font-weight: bold;
       font-size: 14px;
       margin-bottom: 5px;
     }
-
     .card .card-custom-status {
       display: none;
       padding: 2px 8px;
@@ -87,60 +74,53 @@
       border-radius: 10px;
       margin-bottom: 8px;
     }
-
     .card .card-content {
       font-size: 14px;
       line-height: 1.4;
-      margin-top: 5px;
     }
-
     .card.dragging {
       opacity: 0.5;
       transform: rotate(3deg);
       cursor: grabbing;
     }
-
-    /* --- 履歴ログ --- */
+    .column.drop-forbidden {
+      background-color: #ffcdd2;
+      border: 1px dashed #c62828;
+    }
     .history-log {
       background-color: #ffffff;
       border-radius: 8px;
       padding: 10px 15px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-      width: 20%; /* 全体の20% */
-      max-height: calc(100vh - 60px);
+      flex: 1 1 0;
+      max-height: 100%;
       overflow-y: auto;
     }
-
     .history-log h2 {
       font-size: 16px;
       border-bottom: 1px solid #ebecf0;
       padding-bottom: 8px;
       margin-bottom: 8px;
     }
-
     .history-log ul {
       list-style: none;
       padding: 0;
       margin: 0;
     }
-
     .history-log li {
       font-size: 13px;
       padding: 8px 5px;
       border-bottom: 1px solid #f4f5f7;
     }
-
     .history-log li.highlight {
       background-color: #e6f7ff;
     }
-
     .log-time {
       color: #5e6c84;
       display: block;
       font-size: 12px;
       margin-bottom: 4px;
     }
-
     .log-id {
       font-weight: bold;
       color: #0052cc;
@@ -149,10 +129,8 @@
 </head>
 <body>
   <h1>食糧販売 予約管理システム</h1>
-
   <div class="main-container">
     <div class="board">
-      <!-- 呼び出し中 -->
       <div id="calling-column" class="column" data-status-name="呼び出し中">
         <h2>📞 呼び出し中</h2>
         <div class="card-container">
@@ -163,8 +141,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 調理待ち -->
       <div id="waiting-column" class="column" data-status-name="調理待ち">
         <h2>🍳 調理待ち</h2>
         <div class="card-container">
@@ -180,8 +156,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 調理済み -->
       <div id="ready-column" class="column" data-status-name="調理済み">
         <h2>✅ 調理済み</h2>
         <div class="card-container">
@@ -192,14 +166,10 @@
           </div>
         </div>
       </div>
-
-      <!-- 受け渡し済み -->
       <div id="delivered-column" class="column" data-status-name="受け渡し済み">
         <h2>📦 受け渡し済み</h2>
         <div class="card-container"></div>
       </div>
-
-      <!-- その他 -->
       <div id="other-column" class="column" data-status-name="その他">
         <h2>📦 その他</h2>
         <div class="card-container">
@@ -212,7 +182,6 @@
       </div>
     </div>
 
-    <!-- 履歴ログ -->
     <div class="history-log">
       <h2>更新履歴</h2>
       <ul id="log-list"></ul>
@@ -223,7 +192,6 @@
     const cards = document.querySelectorAll('.card');
     const columns = document.querySelectorAll('.column');
     const logList = document.getElementById('log-list');
-
     let draggedCard = null;
     let originalColumn = null;
 
@@ -243,7 +211,6 @@
         originalColumn = card.closest('.column');
         setTimeout(() => card.classList.add('dragging'), 0);
       });
-
       card.addEventListener('dragend', () => {
         if (draggedCard) draggedCard.classList.remove('dragging');
         columns.forEach(col => col.classList.remove('drop-forbidden'));
@@ -255,7 +222,7 @@
     columns.forEach(column => {
       column.addEventListener('dragover', e => {
         e.preventDefault();
-        if (originalColumn && originalColumn.id === 'waiting-column' && column.id === 'ready-column') {
+        if (originalColumn?.id === 'waiting-column' && column.id === 'ready-column') {
           column.classList.add('drop-forbidden');
         } else {
           column.classList.remove('drop-forbidden');
@@ -269,7 +236,6 @@
       column.addEventListener('drop', e => {
         e.preventDefault();
         column.classList.remove('drop-forbidden');
-
         if (!draggedCard || !originalColumn || column === originalColumn) return;
 
         if (originalColumn.id === 'waiting-column' && column.id === 'ready-column') {
@@ -280,7 +246,7 @@
         const cardId = draggedCard.querySelector('.card-id').textContent;
         const fromStatus = originalColumn.dataset.statusName;
         let toStatus = column.dataset.statusName;
-        let customStatus = "";
+        let customStatus = '';
 
         if (column.id === 'other-column') {
           customStatus = prompt("ステータスを入力してください（例：キャンセル、保留など）", "");
@@ -301,7 +267,6 @@
       });
     });
 
-    // 初回ログ
     addLog("システムの利用を開始しました。");
   </script>
 </body>
