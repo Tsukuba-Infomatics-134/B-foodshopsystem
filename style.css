@@ -143,19 +143,19 @@ tr[data-status] {
     border-left: 5px solid transparent;
 }
 tr[data-status="調理済み"] {
-    background-color: #d4edda; /* Light Green */
+    background-color: #eaf6ec; /* Paler Green */
     border-left-color: #28a745; /* Green */
 }
 tr[data-status="呼び出し待ち"] {
-    background-color: #cce5ff; /* Light Blue */
+    background-color: #e7f2ff; /* Paler Blue */
     border-left-color: #007bff; /* Blue */
 }
 tr[data-status="調理待ち"] {
-    background-color: #fff3cd; /* Light Yellow */
+    background-color: #fff9e7; /* Paler Yellow */
     border-left-color: #ffc107; /* Yellow */
 }
 tr[data-status="受け渡し済み"] {
-    background-color: #e9ecef; /* Light Grey */
+    background-color: #f8f9fa; /* Paler Grey */
     border-left-color: #6c757d; /* Grey */
     color: #6c757d;
 }
@@ -163,12 +163,12 @@ tr[data-status="受け渡し済み"] td:not(.status-cell) {
     text-decoration: line-through;
 }
 tr[data-status="その他"] {
-    background-color: #f8d7da; /* Light Red */
+    background-color: #fdedef; /* Paler Red */
     border-left-color: #dc3545; /* Red */
 }
 
 tr[data-status]:hover {
-    filter: brightness(95%);
+    filter: brightness(98%); /* Adjust hover to be more subtle on lighter colors */
 }
 
 /* Status Control Styles */
