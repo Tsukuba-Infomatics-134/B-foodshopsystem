@@ -1,273 +1,471 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>食販 店員機 プロトタイプ</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #f4f5f7;
-      margin: 0;
-      padding: 15px;
-      color: #172b4d;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-    .main-container {
-      display: flex;
-      gap: 10px;
-      height: calc(100vh - 80px);
-      overflow: hidden;
-    }
-    .board {
-      display: flex;
-      flex: 5 5 0;
-      gap: 10px;
-      overflow-x: auto;
-    }
-    .column {
-      background-color: #ebecf0;
-      border-radius: 8px;
-      padding: 10px;
-      flex: 0 0 16.66%;
-      display: flex;
-      flex-direction: column;
-    }
-    .column h2 {
-      font-size: 16px;
-      margin: 8px 0 10px;
-      padding: 0 8px;
-      flex-shrink: 0;
-    }
-    .card-container {
-      max-height: 500px;
-      overflow-y: auto;
-      padding-right: 4px;
-      flex-grow: 1;
-    }
-    .card {
-      background-color: #ffffff;
-      border-radius: 5px;
-      padding: 10px;
-      margin-bottom: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-      cursor: grab;
-    }
-    .card:hover {
-      box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    }
-    .card .card-id {
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 5px;
-    }
-    .card .card-custom-status {
-      display: none;
-      padding: 2px 8px;
-      font-size: 12px;
-      font-weight: bold;
-      background-color: #6c757d;
-      color: white;
-      border-radius: 10px;
-      margin-bottom: 8px;
-    }
-    .card .card-content {
-      font-size: 14px;
-      line-height: 1.4;
-    }
-    .card.dragging {
-      opacity: 0.5;
-      transform: rotate(3deg);
-      cursor: grabbing;
-    }
-    .column.drop-forbidden {
-      background-color: #ffcdd2;
-      border: 1px dashed #c62828;
-    }
-    .history-log {
-      background-color: #ffffff;
-      border-radius: 8px;
-      padding: 10px 15px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-      flex: 1 1 0;
-      max-height: 100%;
-      overflow-y: auto;
-    }
-    .history-log h2 {
-      font-size: 16px;
-      border-bottom: 1px solid #ebecf0;
-      padding-bottom: 8px;
-      margin-bottom: 8px;
-    }
-    .history-log ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    .history-log li {
-      font-size: 13px;
-      padding: 8px 5px;
-      border-bottom: 1px solid #f4f5f7;
-    }
-    .history-log li.highlight {
-      background-color: #e6f7ff;
-    }
-    .log-time {
-      color: #5e6c84;
-      display: block;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .log-id {
-      font-weight: bold;
-      color: #0052cc;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注文管理システム</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>食販 店員機 プロトタイプ</h1>
-  <div class="main-container">
-    <div class="board">
-      <div id="calling-column" class="column" data-status-name="呼び出し中">
-        <h2>📞 呼び出し中</h2>
-        <div class="card-container">
-          <div class="card" draggable="true">
-            <div class="card-id">ID: #00125</div>
-            <div class="card-custom-status"></div>
-            <div class="card-content">・ハンバーグ弁当 x 1<br>・コールスロー x 1</div>
-          </div>
-        </div>
-      </div>
-      <div id="waiting-column" class="column" data-status-name="調理待ち">
-        <h2>🍳 調理待ち</h2>
-        <div class="card-container">
-          <div class="card" draggable="true">
-            <div class="card-id">ID: #00126</div>
-            <div class="card-custom-status"></div>
-            <div class="card-content">・唐揚げ弁当(大) x 2</div>
-          </div>
-          <div class="card" draggable="true">
-            <div class="card-id">ID: #00127</div>
-            <div class="card-custom-status"></div>
-            <div class="card-content">・のり弁当 x 1<br>・味噌汁 x 1</div>
-          </div>
-        </div>
-      </div>
-      <div id="ready-column" class="column" data-status-name="調理済み">
-        <h2>✅ 調理済み</h2>
-        <div class="card-container">
-          <div class="card" draggable="true">
-            <div class="card-id">ID: #00121</div>
-            <div class="card-custom-status"></div>
-            <div class="card-content">・日替わりランチ x 1</div>
-          </div>
-        </div>
-      </div>
-      <div id="delivered-column" class="column" data-status-name="受け渡し済み">
-        <h2>📦 受け渡し済み</h2>
-        <div class="card-container"></div>
-      </div>
-      <div id="other-column" class="column" data-status-name="その他">
-        <h2>📦 その他</h2>
-        <div class="card-container">
-          <div class="card" draggable="true">
-            <div class="card-id">ID: #00119</div>
-            <div class="card-custom-status">キャンセル</div>
-            <div class="card-content">・ミックスフライ弁当 x 1</div>
-          </div>
-        </div>
-      </div>
+
+    <div id="offline-notification" style="display: none;">
+        現在オフラインです。変更はローカルに保存され、接続が回復次第サーバーに送信されます。
     </div>
 
-    <div class="history-log">
-      <h2>更新履歴</h2>
-      <ul id="log-list"></ul>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="login-section">
+            <h1>ログイン</h1>
+            <div class="form-section">
+                <input type="password" id="password-input" placeholder="パスワードを入力" style="width: calc(100% - 22px); padding: 10px; margin-bottom: 10px;">
+                <button onclick="login()" class="btn" style="width: 100%;">ログイン</button>
+                <p id="login-error" class="error-message"></p>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div id="main-section">
+            <div class="main-controls">
+                <p id="user-class-display"><span id="user-class"></span></p>
+                <div>
+                    <a href="add_order.html" class="btn">＋ 新規注文</a>
+                    <button onclick="logout()" class="btn btn-logout">ログアウト</button>
+                </div>
+            </div>
+
+            <h2>注文一覧</h2>
+            <div class="table-wrapper">
+                <table id="order-table">
+                    <thead>
+                        <!-- Header will be populated by JavaScript -->
+                    </thead>
+                    <tbody id="order-table-body">
+                        <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const cards = document.querySelectorAll('.card');
-    const columns = document.querySelectorAll('.column');
-    const logList = document.getElementById('log-list');
-    let draggedCard = null;
-    let originalColumn = null;
+    <script>
+        const API_BASE_URL = 'https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev';
 
-    function addLog(message) {
-      const listItem = document.createElement('li');
-      const now = new Date();
-      const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-      listItem.innerHTML = `<span class="log-time">${timeString}</span> ${message}`;
-      logList.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
-      logList.prepend(listItem);
-      listItem.classList.add('highlight');
-    }
+        const classData = [
+            { name: "1組", items: ["item_1", "item_2"] },
+            { name: "2組", items: ["プレーン", "チーズ"] },
+            { name: "3組", items: ["プレーン", "みたらし"] },
+            { name: "4組", items: ["プレーン", "マンゴー"] },
+            { name: "5組", items: ["コンソメ", "バター醤油"] },
+            { name: "6組", items: ["明太チーズ", "プレーン"] }
+        ];
 
-    cards.forEach(card => {
-      card.addEventListener('dragstart', () => {
-        draggedCard = card;
-        originalColumn = card.closest('.column');
-        setTimeout(() => card.classList.add('dragging'), 0);
-      });
-      card.addEventListener('dragend', () => {
-        if (draggedCard) draggedCard.classList.remove('dragging');
-        columns.forEach(col => col.classList.remove('drop-forbidden'));
-        draggedCard = null;
-        originalColumn = null;
-      });
-    });
+        const tableHead = document.querySelector('#order-table thead');
+        const tableBody = document.getElementById('order-table-body');
+        const loginSection = document.getElementById('login-section');
+        const mainSection = document.getElementById('main-section');
+        const userClassSpan = document.getElementById('user-class');
+        const loginErrorP = document.getElementById('login-error');
+        const offlineNotification = document.getElementById('offline-notification');
 
-    columns.forEach(column => {
-      column.addEventListener('dragover', e => {
-        e.preventDefault();
-        if (originalColumn?.id === 'waiting-column' && column.id === 'ready-column') {
-          column.classList.add('drop-forbidden');
-        } else {
-          column.classList.remove('drop-forbidden');
-        }
-      });
+        let orderUpdateInterval;
+        let isOffline = false;
+        let offlineQueue = [];
+        let isUpdateInProgress = false;
+        let allOrdersData = {}; // To hold the last known state of all orders
 
-      column.addEventListener('dragleave', () => {
-        column.classList.remove('drop-forbidden');
-      });
+        window.addEventListener('online', () => setOnlineStatus(true));
+        window.addEventListener('offline', () => setOnlineStatus(false));
 
-      column.addEventListener('drop', e => {
-        e.preventDefault();
-        column.classList.remove('drop-forbidden');
-        if (!draggedCard || !originalColumn || column === originalColumn) return;
-
-        if (originalColumn.id === 'waiting-column' && column.id === 'ready-column') {
-          alert('「調理待ち」から「調理済み」へは直接移動できません。');
-          return;
+        function setOnlineStatus(online) {
+            isOffline = !online;
+            offlineNotification.style.display = isOffline ? 'block' : 'none';
+            if (online) {
+                processOfflineQueue();
+            }
         }
 
-        const cardId = draggedCard.querySelector('.card-id').textContent;
-        const fromStatus = originalColumn.dataset.statusName;
-        let toStatus = column.dataset.statusName;
-        let customStatus = '';
+        // Initial check
+        setOnlineStatus(navigator.onLine);
 
-        if (column.id === 'other-column') {
-          customStatus = prompt("ステータスを入力してください（例：キャンセル、保留など）", "");
-          if (customStatus === null) return;
-          const statusBadge = draggedCard.querySelector('.card-custom-status');
-          statusBadge.textContent = customStatus;
-          statusBadge.style.display = customStatus ? 'inline-block' : 'none';
-          if (customStatus) toStatus = `その他 (${customStatus})`;
-        } else {
-          const statusBadge = draggedCard.querySelector('.card-custom-status');
-          statusBadge.textContent = '';
-          statusBadge.style.display = 'none';
+        window.onload = () => {
+            const savedOrders = localStorage.getItem('allOrdersData');
+            if (savedOrders) {
+                allOrdersData = JSON.parse(savedOrders);
+            }
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                showMainContent();
+            } else {
+                showLogin();
+            }
+            loadOfflineQueue();
+        };
+
+        async function login() {
+            const password = document.getElementById('password-input').value;
+            loginErrorP.textContent = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'GET',
+                    headers: { 'password': password }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('authToken', data.token);
+                    localStorage.setItem('userClass', data.user);
+                    localStorage.setItem('userType', data.type);
+                    showMainContent();
+                } else {
+                    const errorData = await response.json();
+                    loginErrorP.textContent = `ログインに失敗しました: ${errorData.detail}`;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                loginErrorP.textContent = 'サーバーとの通信に失敗しました。';
+                setOnlineStatus(false);
+            }
         }
 
-        column.querySelector('.card-container').appendChild(draggedCard);
-        const logMessage = `<span class="log-id">${cardId}</span> を <strong>「${fromStatus}」</strong> から <strong>「${toStatus}」</strong> へ移動しました。`;
-        addLog(logMessage);
-      });
-    });
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userClass');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('allOrdersData');
+            localStorage.removeItem('offlineQueue');
+            if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+            }
+            showLogin();
+        }
 
-    addLog("システムの利用を開始しました。");
-  </script>
+        function showLogin() {
+            loginSection.style.display = 'block';
+            mainSection.style.display = 'none';
+            if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+            }
+        }
+
+        function showMainContent() {
+            const userClass = localStorage.getItem('userClass');
+            userClassSpan.textContent = `${userClass}組 店員機B`;
+            loginSection.style.display = 'none';
+            mainSection.style.display = 'block';
+
+            fetchAndRenderOrders(); // Initial fetch
+
+            if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+            }
+            orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000); // Update every 5 seconds
+        }
+
+        function saveOfflineQueue() {
+            localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+        }
+
+        function loadOfflineQueue() {
+            const savedQueue = localStorage.getItem('offlineQueue');
+            if (savedQueue) {
+                offlineQueue = JSON.parse(savedQueue);
+                processOfflineQueue();
+            }
+        }
+
+        async function processOfflineQueue() {
+            if (isOffline || offlineQueue.length === 0) return;
+
+            const token = localStorage.getItem('authToken');
+            if (!token) return; // Can't process without a token
+
+            console.log(`Processing ${offlineQueue.length} offline changes.`);
+
+            while (offlineQueue.length > 0) {
+                const { orderId, newStatus, message } = offlineQueue[0];
+                try {
+                    const response = await fetch(`${API_BASE_URL}/change_status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': token
+                        },
+                        body: JSON.stringify({
+                            order_id: orderId,
+                            status: newStatus,
+                            message: message
+                        })
+                    });
+
+                    if (response.ok) {
+                        offlineQueue.shift(); // Remove the successfully processed item
+                        saveOfflineQueue();
+                    } else {
+                        // If a request fails, stop processing to maintain order
+                        console.error('Failed to sync offline change, stopping queue.', await response.json());
+                        setOnlineStatus(false); // Assume offline if server rejects our request
+                        break;
+                    }
+                } catch (error) {
+                    console.error('Network error during offline queue processing, stopping queue.', error);
+                    setOnlineStatus(false);
+                    break;
+                }
+            }
+
+            // Refresh data after processing the queue
+            if (offlineQueue.length === 0) {
+                fetchAndRenderOrders();
+            }
+        }
+
+        async function fetchAndRenderOrders() {
+            const token = localStorage.getItem('authToken');
+            const userClass = localStorage.getItem('userClass');
+            
+            if (!token || !userClass) {
+                logout();
+                return;
+            }
+
+            if (isOffline) {
+                console.log("Offline, rendering from saved data.");
+                renderTable(allOrdersData, userClass);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/log_all`, {
+                    headers: { 'Authorization': token }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                setOnlineStatus(true);
+                allOrdersData = await response.json();
+                localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
+                renderTable(allOrdersData, userClass);
+
+            } catch (error) {
+                console.error('Failed to fetch orders, going offline:', error);
+                setOnlineStatus(false);
+                renderTable(allOrdersData, userClass); // Render with potentially stale data
+            }
+        }
+
+        function renderTable(ordersData, userClass) {
+            const selectedClassData = classData.find(c => c.name === `${userClass}組`);
+            if (!selectedClassData) return;
+
+            const items = selectedClassData.items;
+
+            tableHead.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            const headers = ["注文ID", ...items, "ステータス"];
+            headers.forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            tableHead.appendChild(headerRow);
+
+            tableBody.innerHTML = '';
+            const ordersForClass = Object.values(ordersData).filter(o => o.user == userClass).sort((a, b) => b.id - a.id);
+
+            ordersForClass.forEach(order => {
+                const tr = document.createElement('tr');
+                tr.dataset.status = order.status;
+
+                const otherHistory = order.history.filter(h => h.status === 'その他');
+                const latestMessage = otherHistory.length > 0 ? otherHistory[otherHistory.length - 1].message : '';
+                tr.dataset.latestOtherMessage = latestMessage;
+
+                const statusCell = document.createElement('td');
+                statusCell.className = 'status-cell';
+                statusCell.innerHTML = createStatusSelector(order);
+
+                tr.innerHTML = `<td>${order.id}</td>` + items.map(item => `<td>${(order.order_items && order.order_items[item]) || 0}</td>`).join('');
+                tr.appendChild(statusCell);
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function createStatusSelector(order) {
+            const statusFlow = ["呼び出し待ち", "調理待ち", "調理済み", "受け渡し済み"];
+            const isFinalStatus = order.status === "受け渡し済み";
+            const isOtherStatus = order.status === 'その他';
+
+            let controlHtml;
+
+            if (isOtherStatus) {
+                const otherHistory = order.history.filter(h => h.status === 'その他');
+                const latestMessage = otherHistory.length > 0 ? otherHistory[otherHistory.length - 1].message : '';
+                controlHtml = `
+                    <input type="text" class="other-input" value="${latestMessage}" 
+                           onfocus="pauseAutoUpdate()" 
+                           onblur="statusChanged(this, ${order.id}, true); resumeAutoUpdate();">
+                    <button class="change-status-type-btn" onclick="showStatusChanger(this, ${order.id})">変更</button>
+                `;
+            } else {
+                let options = statusFlow.map(s =>
+                    `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`
+                ).join('');
+                options += `<option value="その他">その他</option>`;
+                controlHtml = `
+                    <select class="status-select" 
+                            onfocus="pauseAutoUpdate()" 
+                            onchange="statusChanged(this, ${order.id})" 
+                            onblur="resumeAutoUpdate()">${options}</select>
+                    <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" ${isFinalStatus ? 'disabled' : ''}>次へ</button>
+                `;
+            }
+
+            return `<div class="status-control-container">${controlHtml}</div>`;
+        }
+
+        function goToNextStatus(buttonElement, orderId, currentStatus) {
+            const statusFlow = ["呼び出し待ち", "調理待ち", "調理済み", "受け渡し済み"];
+            const currentIndex = statusFlow.indexOf(currentStatus);
+
+            if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
+                const nextStatus = statusFlow[currentIndex + 1];
+                const fakeElement = { value: nextStatus, closest: (s) => buttonElement.closest(s) };
+                statusChanged(fakeElement, orderId);
+            }
+        }
+
+        function pauseAutoUpdate() {
+            if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+            }
+        }
+
+        function resumeAutoUpdate() {
+            if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+            }
+            orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+        }
+
+        function showStatusChanger(buttonElement, orderId) {
+            const statusCell = buttonElement.closest('.status-cell');
+            const statuses = ["呼び出し待ち", "調理待ち", "調理済み", "受け渡し済み"];
+
+            let options = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+            options += `<option value="その他" selected>その他</option>`; 
+
+            statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${orderId})">${options}</select>`;
+            statusCell.querySelector('select').focus();
+        }
+
+        async function updateOrderStatus(rowElement, orderId, newStatus, message = null) {
+            if (isUpdateInProgress) return;
+            isUpdateInProgress = true;
+
+            if (rowElement) rowElement.classList.add('updating');
+            pauseAutoUpdate();
+
+            const token = localStorage.getItem('authToken');
+
+            if (isOffline) {
+                console.log('Offline: Queuing status change');
+                offlineQueue.push({ orderId, newStatus, message });
+                saveOfflineQueue();
+                await localUpdate(orderId, newStatus, message);
+                if (rowElement) rowElement.classList.remove('updating');
+                isUpdateInProgress = false;
+                resumeAutoUpdate();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/change_status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        status: newStatus,
+                        message: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} - ${await response.text()}`);
+                }
+
+                setOnlineStatus(true);
+                await fetchAndRenderOrders();
+
+            } catch (error) {
+                console.error('Failed to change status, going offline:', error);
+                setOnlineStatus(false);
+                offlineQueue.push({ orderId, newStatus, message });
+                saveOfflineQueue();
+                await localUpdate(orderId, newStatus, message);
+            } finally {
+                if (rowElement) rowElement.classList.remove('updating');
+                isUpdateInProgress = false;
+                resumeAutoUpdate();
+            }
+        }
+
+        async function localUpdate(orderId, newStatus, message) {
+            const userClass = localStorage.getItem('userClass');
+            
+            if (allOrdersData[orderId]) {
+                allOrdersData[orderId].status = newStatus;
+                const historyEntry = {
+                    timestamp: Math.floor(Date.now() / 1000),
+                    status: newStatus,
+                    message: message || '',
+                    from: 'local' // Mark this as a local change
+                };
+                if (!allOrdersData[orderId].history) {
+                    allOrdersData[orderId].history = [];
+                }
+                allOrdersData[orderId].history.push(historyEntry);
+
+                // Save the locally modified data and re-render
+                localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
+                renderTable(allOrdersData, userClass);
+            } else {
+                console.warn('Could not find order in local data to update:', orderId);
+            }
+        }
+
+        function statusChanged(element, orderId, isOtherInput = false) {
+            const row = element.closest('tr');
+            let status, message = null;
+
+            if (isOtherInput) {
+                status = 'その他';
+                message = element.value;
+            } else {
+                status = element.value;
+                if (status === 'その他') {
+                    const currentTd = element.closest('.status-cell');
+                    const latestMessage = row.dataset.latestOtherMessage || '';
+                    
+                    pauseAutoUpdate();
+                    currentTd.innerHTML = createStatusSelector({ id: orderId, status: 'その他', history: [] });
+                    const input = currentTd.querySelector('.other-input');
+                    input.value = latestMessage;
+                    input.focus();
+                    resumeAutoUpdate(); // Resume after focus
+                    return;
+                }
+            }
+            
+            updateOrderStatus(row, orderId, status, message);
+        }
+
+    </script>
+
 </body>
 </html>

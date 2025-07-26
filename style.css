@@ -1,0 +1,298 @@
+/* General Body Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
+    margin: 0;
+    padding: 1em;
+    line-height: 1.5;
+    font-size: 14px; /* Further reduced base font size */
+}
+
+#offline-notification {
+    background-color: #ffc107; /* Warning yellow */
+    color: #333;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Main Container */
+.container {
+    max-width: 1100px;
+    margin: 15px auto;
+    padding: 15px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+/* Headings */
+h1, h2 {
+    color: #343a40;
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+h1 {
+    font-size: 1.8em;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5em;
+    margin-bottom: 1em;
+}
+
+h2 {
+    font-size: 1.4em;
+}
+
+/* Header Controls */
+.main-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: #f1f3f5;
+    border-radius: 6px;
+    margin-bottom: 1.5em;
+}
+
+.main-controls p {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1em;
+}
+
+/* Buttons and Links */
+.btn, a.btn {
+    display: inline-block;
+    text-decoration: none;
+    background-color: #007bff;
+    color: #fff;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    font-size: 1em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover, a.btn:hover {
+    background-color: #0056b3;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-logout {
+    background-color: #dc3545;
+}
+
+.btn-logout:hover {
+    background-color: #c82333;
+}
+
+/* Table Styles */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+th, td {
+    border: 1px solid #dee2e6;
+    padding: 10px 12px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #e9ecef;
+    font-weight: 700;
+    color: #495057;
+    font-size: 1em;
+}
+
+#order-table-body td:first-child {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
+tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+tr:hover {
+    background-color: #e9ecef;
+}
+
+/* Row updating style */
+tr.updating {
+    opacity: 0.5;
+    pointer-events: none; /* Prevent further interaction while updating */
+}
+
+/* Status Colors */
+tr[data-status] {
+    border-left: 5px solid transparent;
+}
+tr[data-status="調理済み"] {
+    background-color: #d4edda; /* Light Green */
+    border-left-color: #28a745; /* Green */
+}
+tr[data-status="呼び出し待ち"] {
+    background-color: #cce5ff; /* Light Blue */
+    border-left-color: #007bff; /* Blue */
+}
+tr[data-status="調理待ち"] {
+    background-color: #fff3cd; /* Light Yellow */
+    border-left-color: #ffc107; /* Yellow */
+}
+tr[data-status="受け渡し済み"] {
+    background-color: #e9ecef; /* Light Grey */
+    border-left-color: #6c757d; /* Grey */
+    color: #6c757d;
+}
+tr[data-status="受け渡し済み"] td:not(.status-cell) {
+    text-decoration: line-through;
+}
+tr[data-status="その他"] {
+    background-color: #f8d7da; /* Light Red */
+    border-left-color: #dc3545; /* Red */
+}
+
+tr[data-status]:hover {
+    filter: brightness(95%);
+}
+
+/* Status Control Styles */
+.status-control-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.status-select, .other-input {
+    flex-grow: 1;
+    width: 100%;
+    font-size: 1em;
+    padding: 6px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.next-status-btn, .change-status-type-btn {
+    padding: 6px 12px;
+    font-size: 1em;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.next-status-btn {
+    background-color: #28a745;
+}
+
+.next-status-btn:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.next-status-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.change-status-type-btn {
+    background-color: #6c757d;
+}
+
+.change-status-type-btn:hover {
+    background-color: #5a6268;
+}
+
+
+/* Form Styles */
+.form-section {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #fdfdff;
+}
+
+.form-section form > div {
+    margin-bottom: 12px;
+}
+
+.form-section label {
+    display: inline-block;
+    width: 140px;
+    font-weight: 600;
+}
+
+.form-section input[type="number"], #password-input {
+    padding: 6px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+#password-input {
+    width: calc(100% - 14px);
+}
+
+/* Login Section */
+#login-section {
+    max-width: 380px;
+    margin: 40px auto;
+}
+
+/* Messages */
+.error-message {
+    color: #c82333;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.success-message {
+    color: #218838;
+    margin-top: 10px;
+    font-weight: 600;
+    border: 1px solid #28a745;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #d4edda;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    body {
+        padding: 0.8em;
+        font-size: 12px;
+    }
+    .container {
+        padding: 10px;
+    }
+    .main-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .main-controls > div {
+        margin-top: 8px;
+    }
+    th, td {
+        padding: 6px 4px;
+    }
+}
