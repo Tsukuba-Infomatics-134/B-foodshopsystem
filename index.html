@@ -48,7 +48,8 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev';
+        const API_BASE_URL = 'https://api.yaakiyu.f5.si';
+        // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
 
         const classData = [
             { name: "1組", items: ["item_1", "item_2"] },
@@ -148,12 +149,14 @@
             }
         }
 
+        let isFirstFetch = true;
         function showMainContent() {
             const userClass = localStorage.getItem('userClass');
             userClassSpan.textContent = `${userClass}組 店員機B`;
             loginSection.style.display = 'none';
             mainSection.style.display = 'block';
 
+            isFirstFetch = true;
             fetchAndRenderOrders(); // Initial fetch
 
             if (orderUpdateInterval) {
@@ -223,32 +226,66 @@
         async function fetchAndRenderOrders() {
             const token = localStorage.getItem('authToken');
             const userClass = localStorage.getItem('userClass');
-            
             if (!token || !userClass) {
                 logout();
                 return;
             }
-
             if (isOffline) {
                 console.log("Offline, rendering from saved data.");
                 renderTable(allOrdersData, userClass);
                 return;
             }
-
             try {
-                const response = await fetch(`${API_BASE_URL}/log_all`, {
-                    headers: { 'Authorization': token }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                if (isFirstFetch) {
+                    // 初回のみlog_all
+                    const response = await fetch(`${API_BASE_URL}/log_all`, {
+                        headers: { 'Authorization': token }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                    setOnlineStatus(true);
+                    allOrdersData = await response.json();
+                    localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
+                    renderTable(allOrdersData, userClass);
+                    isFirstFetch = false;
+                } else {
+                    // 2回目以降はcheck
+                    const response = await fetch(`${API_BASE_URL}/check`, {
+                        headers: { 'Authorization': token }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                    setOnlineStatus(true);
+                    const checkData = await response.json();
+                    // checkData: [{id, status, message, ...}]
+                    // allOrdersDataのstatus更新＋新規オーダー追加
+                    if (Array.isArray(checkData)) {
+                        checkData.forEach(update => {
+                            if (allOrdersData[update.id]) {
+                                allOrdersData[update.id].status = update.status;
+                                // historyは追加しない（message無視）
+                            } else if (update.order_items) {
+                                // 新規オーダー
+                                allOrdersData[update.id] = {
+                                    id: update.order_id,
+                                    user: userClass,
+                                    order_items: update.order_items,
+                                    status: update.status,
+                                    history: [{
+                                        timestamp: update.timestamp,
+                                        status: update.status,
+                                        message: update.message || '',
+                                        from: update.from
+                                    }]
+                                };
+                            }
+                        });
+                        localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
+                    }
+                    renderTable(allOrdersData, userClass);
                 }
-                
-                setOnlineStatus(true);
-                allOrdersData = await response.json();
-                localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
-                renderTable(allOrdersData, userClass);
-
             } catch (error) {
                 console.error('Failed to fetch orders, going offline:', error);
                 setOnlineStatus(false);
