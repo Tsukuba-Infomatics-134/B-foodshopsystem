@@ -230,11 +230,6 @@
                 logout();
                 return;
             }
-            if (isOffline) {
-                console.log("Offline, rendering from saved data.");
-                renderTable(allOrdersData, userClass);
-                return;
-            }
             try {
                 if (isFirstFetch) {
                     // 初回のみlog_all
@@ -242,6 +237,28 @@
                         headers: { 'Authorization': token }
                     });
                     if (!response.ok) {
+                        if (response.status === 429) {
+                            const retryAfter = response.headers.get('Retry-After');
+                            let delay = 0;
+                            const sec = parseFloat(retryAfter);
+                            if (!isNaN(sec)) {
+                                delay = sec * 1000;
+                            } else {
+                                delay = 10000;
+                            }
+                            console.warn(`Too many requests, Retry after: ${retryAfter} (${delay}ms)`);
+                            if (orderUpdateInterval) {
+                                clearInterval(orderUpdateInterval);
+                                orderUpdateInterval = null;
+                            }
+                            setTimeout(() => {
+                                if (!orderUpdateInterval) {
+                                    fetchAndRenderOrders();
+                                    orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+                                }
+                            }, Math.max(delay, 1000));
+                            return;
+                        }
                         throw new Error(`API Error: ${response.status}`);
                     }
                     setOnlineStatus(true);
@@ -363,14 +380,13 @@
             return `<div class="status-control-container">${controlHtml}</div>`;
         }
 
-        function goToNextStatus(buttonElement, orderId, currentStatus) {
+        async function goToNextStatus(buttonElement, orderId, currentStatus) {
             const statusFlow = ["呼び出し待ち", "調理待ち", "調理済み", "受け渡し済み"];
             const currentIndex = statusFlow.indexOf(currentStatus);
-
             if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
                 const nextStatus = statusFlow[currentIndex + 1];
-                const fakeElement = { value: nextStatus, closest: (s) => buttonElement.closest(s) };
-                statusChanged(fakeElement, orderId);
+                const row = buttonElement.closest('tr');
+                await updateOrderStatus(row, orderId, nextStatus, null);
             }
         }
 
@@ -405,6 +421,8 @@
             if (rowElement) rowElement.classList.add('updating');
             pauseAutoUpdate();
 
+            console.log(`Updating order ${orderId} status to ${newStatus} with message: ${message || 'N/A'}`);
+
             const token = localStorage.getItem('authToken');
 
             if (isOffline) {
@@ -437,7 +455,19 @@
                 }
 
                 setOnlineStatus(true);
-                await fetchAndRenderOrders();
+                const res = await response.json();
+                if (res.result === "true") {
+                    allOrdersData[orderId].status = newStatus;
+                    allOrdersData[orderId].history.push({
+                        timestamp: Math.floor(Date.now() / 1000),
+                        status: newStatus,
+                        message: message,
+                        from: localStorage.getItem('userClass')
+                    });
+                    localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
+                    const userClass = localStorage.getItem('userClass');
+                    renderTable(allOrdersData, userClass);
+                }
 
             } catch (error) {
                 console.error('Failed to change status, going offline:', error);
