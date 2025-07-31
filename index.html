@@ -342,7 +342,7 @@
                 statusCell.className = 'status-cell';
                 statusCell.innerHTML = createStatusSelector(order);
 
-                tr.innerHTML = `<td>${order.id}</td>` + items.map(item => `<td>${(order.order_items && order.order_items[item]) || 0}</td>`).join('');
+                tr.innerHTML = `<td>${order.id}</td>` + items.map((item, idx) => `<td>${(order.order_items && order.order_items[`item_${idx + 1}`]) || 0}</td>`).join('');
                 tr.appendChild(statusCell);
                 tableBody.appendChild(tr);
             });
