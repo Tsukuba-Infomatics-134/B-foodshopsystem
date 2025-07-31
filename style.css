@@ -154,6 +154,10 @@ tr[data-status="調理待ち"] {
     background-color: #fff9e7; /* Paler Yellow */
     border-left-color: #ffc107; /* Yellow */
 }
+tr[data-status="調理中"] {
+    background-color: #fff3cd; /* Paler Orange */
+    border-left-color: #fd7e14; /* Orange */
+}
 tr[data-status="受け渡し済み"] {
     background-color: #f8f9fa; /* Paler Grey */
     border-left-color: #6c757d; /* Grey */
