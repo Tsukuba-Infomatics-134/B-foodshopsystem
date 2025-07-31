@@ -348,7 +348,7 @@
         }
 
         function createStatusSelector(order) {
-            const statusFlow = ["呼び出し待ち", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
+            const statusFlow = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
             const isFinalStatus = order.status === "受け渡し済み";
             const isOtherStatus = order.status === 'その他';
 
@@ -381,7 +381,7 @@
         }
 
         async function goToNextStatus(buttonElement, orderId, currentStatus) {
-            const statusFlow = ["呼び出し待ち", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
+            const statusFlow = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
             const currentIndex = statusFlow.indexOf(currentStatus);
             if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
                 const nextStatus = statusFlow[currentIndex + 1];
@@ -405,7 +405,7 @@
 
         function showStatusChanger(buttonElement, orderId) {
             const statusCell = buttonElement.closest('.status-cell');
-            const statuses = ["呼び出し待ち", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
+            const statuses = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
 
             let options = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
             options += `<option value="その他" selected>その他</option>`; 

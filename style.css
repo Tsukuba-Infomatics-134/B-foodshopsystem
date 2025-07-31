@@ -150,6 +150,10 @@ tr[data-status="呼び出し待ち"] {
     background-color: #e7f2ff; /* Paler Blue */
     border-left-color: #007bff; /* Blue */
 }
+tr[data-status="呼び出し中"] {
+    background-color: #d1ecf1; /* Paler Cyan */
+    border-left-color: #17a2b8; /* Cyan */
+}
 tr[data-status="調理待ち"] {
     background-color: #fff9e7; /* Paler Yellow */
     border-left-color: #ffc107; /* Yellow */
