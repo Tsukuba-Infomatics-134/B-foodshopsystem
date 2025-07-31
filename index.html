@@ -162,7 +162,7 @@
             if (orderUpdateInterval) {
                 clearInterval(orderUpdateInterval);
             }
-            orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000); // Update every 5 seconds
+            orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000); // Update every 1 seconds
         }
 
         function saveOfflineQueue() {
@@ -254,7 +254,7 @@
                             setTimeout(() => {
                                 if (!orderUpdateInterval) {
                                     fetchAndRenderOrders();
-                                    orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+                                    orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000);
                                 }
                             }, Math.max(delay, 1000));
                             return;
@@ -280,8 +280,8 @@
                     // allOrdersDataのstatus更新＋新規オーダー追加
                     if (Array.isArray(checkData)) {
                         checkData.forEach(update => {
-                            if (allOrdersData[update.id]) {
-                                allOrdersData[update.id].status = update.status;
+                            if (allOrdersData[update.order_id]) {
+                                allOrdersData[update.order_id].status = update.status;
                                 // historyは追加しない（message無視）
                             } else if (update.order_items) {
                                 // 新規オーダー
@@ -330,6 +330,7 @@
             const ordersForClass = Object.values(ordersData).filter(o => o.user == userClass).sort((a, b) => b.id - a.id);
 
             ordersForClass.forEach(order => {
+                if (order.id < 7) return;  // 在庫管理用IDは表示しない
                 const tr = document.createElement('tr');
                 tr.dataset.status = order.status;
 
