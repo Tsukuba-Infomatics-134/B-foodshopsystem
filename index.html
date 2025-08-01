@@ -717,20 +717,24 @@
         addOrderSuccessP.textContent = "";
 
         const order_items = {};
+        let id = 1;
         selectedClassData.items.forEach((item) => {
           const quantity = parseInt(
             document.getElementById(`item-${item}`).value,
             10
           );
           if (quantity > 0) {
-            order_items[item] = quantity;
+            order_items[`item_${id}`] = quantity;
+            // order_items[item] = quantity;
           }
+          id++;
         });
 
         if (Object.keys(order_items).length === 0) {
           addOrderErrorP.textContent = "商品を1つ以上入力してください。";
           return;
         }
+        console.log("Adding new order:", order_items);
 
         try {
           const response = await fetch(`${API_BASE_URL}/order`, {
@@ -752,6 +756,23 @@
           const result = await response.json();
           addOrderSuccessP.textContent = `注文 (ID: ${result.order_id}) を正常に追加しました。`;
           addOrderForm.reset();
+
+          allOrdersData[result.order_id] = {
+            id: result.order_id,
+            user: userClass,
+            order_items: order_items,
+            status: "呼び出し待ち",
+            history: [
+              {
+                timestamp: Math.floor(Date.now() / 1000),
+                status: "呼び出し待ち",
+                message: "",
+                from: userClass,
+              },
+            ],
+          };
+          localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
+          renderTable(allOrdersData, userClass);
         } catch (error) {
           console.error("Failed to add order:", error);
           addOrderErrorP.textContent = `注文の追加に失敗しました: ${error.message}`;
