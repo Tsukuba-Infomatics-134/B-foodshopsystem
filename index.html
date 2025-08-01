@@ -285,7 +285,7 @@
                                 // historyは追加しない（message無視）
                             } else if (update.order_items) {
                                 // 新規オーダー
-                                allOrdersData[update.id] = {
+                                allOrdersData[update.order_id] = {
                                     id: update.order_id,
                                     user: userClass,
                                     order_items: update.order_items,
