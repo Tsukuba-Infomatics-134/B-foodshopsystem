@@ -1,539 +1,762 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>注文管理システム</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <div id="offline-notification" style="display: none;">
-        現在オフラインです。変更はローカルに保存され、接続が回復次第サーバーに送信されます。
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="offline-notification" style="display: none">
+      現在オフラインです。変更はローカルに保存され、接続が回復次第サーバーに送信されます。
     </div>
 
-    <div class="container">
-        <!-- Login Section -->
-        <div id="login-section">
-            <h1>ログイン</h1>
-            <div class="form-section">
-                <input type="password" id="password-input" placeholder="パスワードを入力" style="width: calc(100% - 22px); padding: 10px; margin-bottom: 10px;">
-                <button onclick="login()" class="btn" style="width: 100%;">ログイン</button>
-                <p id="login-error" class="error-message"></p>
-            </div>
+    <div class="default-container">
+      <!-- Login Section -->
+      <div id="login-section">
+        <h1>ログイン</h1>
+        <div class="form-section">
+          <input
+            type="password"
+            id="password-input"
+            placeholder="パスワードを入力"
+            style="width: calc(100% - 22px); padding: 10px; margin-bottom: 10px"
+          />
+          <button onclick="login()" class="btn" style="width: 100%">
+            ログイン
+          </button>
+          <p id="login-error" class="error-message"></p>
+        </div>
+      </div>
+
+      <!-- Main Content Section -->
+      <div id="main-section" style="display: none">
+        <div class="main-controls">
+          <p id="user-class-display"><span id="user-class"></span></p>
+          <div>
+            <button onclick="addorderopen()" class="btn">＋ 新規注文</button>
+            <button onclick="logout()" class="btn btn-logout">
+              ログアウト
+            </button>
+          </div>
         </div>
 
-        <!-- Main Content Section -->
-        <div id="main-section">
-            <div class="main-controls">
-                <p id="user-class-display"><span id="user-class"></span></p>
-                <div>
-                    <a href="add_order.html" class="btn">＋ 新規注文</a>
-                    <button onclick="logout()" class="btn btn-logout">ログアウト</button>
-                </div>
-            </div>
-
-            <h2>注文一覧</h2>
-            <div class="table-wrapper">
-                <table id="order-table">
-                    <thead>
-                        <!-- Header will be populated by JavaScript -->
-                    </thead>
-                    <tbody id="order-table-body">
-                        <!-- Rows will be populated by JavaScript -->
-                    </tbody>
-                </table>
-            </div>
+        <h2>注文一覧</h2>
+        <div class="table-wrapper">
+          <table id="order-table">
+            <thead>
+              <!-- Header will be populated by JavaScript -->
+            </thead>
+            <tbody id="order-table-body">
+              <!-- Rows will be populated by JavaScript -->
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
+
+    <div class="add_order-container" style="display: none">
+      <h1>新規注文追加</h1>
+
+      <div class="form-section">
+        <form
+          id="add-order-form"
+          onsubmit="event.preventDefault(); addNewOrder();"
+        >
+          <!-- Item inputs will be populated by JavaScript -->
+        </form>
+        <p id="add-order-error" class="error-message"></p>
+        <p id="add-order-success" class="success-message"></p>
+      </div>
+      <br />
+      <button onclick="returnToMain()" class="btn">注文一覧に戻る</button>
     </div>
 
     <script>
-        const API_BASE_URL = 'https://api.yaakiyu.f5.si';
-        // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
+      const API_BASE_URL = "https://api.yaakiyu.f5.si";
+      // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
 
-        const classData = [
-            { name: "1組", items: ["item_1", "item_2"] },
-            { name: "2組", items: ["プレーン", "チーズ"] },
-            { name: "3組", items: ["プレーン", "みたらし"] },
-            { name: "4組", items: ["プレーン", "マンゴー"] },
-            { name: "5組", items: ["コンソメ", "バター醤油"] },
-            { name: "6組", items: ["明太チーズ", "プレーン"] }
-        ];
+      const classData = [
+        { name: "1組", items: ["item_1", "item_2"] },
+        { name: "2組", items: ["プレーン", "チーズ"] },
+        { name: "3組", items: ["プレーン", "みたらし"] },
+        { name: "4組", items: ["プレーン", "マンゴー"] },
+        { name: "5組", items: ["コンソメ", "バター醤油"] },
+        { name: "6組", items: ["明太チーズ", "プレーン"] },
+      ];
 
-        const tableHead = document.querySelector('#order-table thead');
-        const tableBody = document.getElementById('order-table-body');
-        const loginSection = document.getElementById('login-section');
-        const mainSection = document.getElementById('main-section');
-        const userClassSpan = document.getElementById('user-class');
-        const loginErrorP = document.getElementById('login-error');
-        const offlineNotification = document.getElementById('offline-notification');
+      const tableHead = document.querySelector("#order-table thead");
+      const tableBody = document.getElementById("order-table-body");
+      const loginSection = document.getElementById("login-section");
+      const mainSection = document.getElementById("main-section");
+      const userClassSpan = document.getElementById("user-class");
+      const loginErrorP = document.getElementById("login-error");
+      const offlineNotification = document.getElementById(
+        "offline-notification"
+      );
 
-        let orderUpdateInterval;
-        let isOffline = false;
-        let offlineQueue = [];
-        let isUpdateInProgress = false;
-        let allOrdersData = {}; // To hold the last known state of all orders
+      let orderUpdateInterval;
+      let isOffline = false;
+      let offlineQueue = [];
+      let isUpdateInProgress = false;
+      let allOrdersData = {}; // To hold the last known state of all orders
 
-        window.addEventListener('online', () => setOnlineStatus(true));
-        window.addEventListener('offline', () => setOnlineStatus(false));
+      window.addEventListener("online", () => setOnlineStatus(true));
+      window.addEventListener("offline", () => setOnlineStatus(false));
 
-        function setOnlineStatus(online) {
-            isOffline = !online;
-            offlineNotification.style.display = isOffline ? 'block' : 'none';
-            if (online) {
-                processOfflineQueue();
-            }
+      function setOnlineStatus(online) {
+        isOffline = !online;
+        offlineNotification.style.display = isOffline ? "block" : "none";
+        if (online) {
+          processOfflineQueue();
         }
+      }
 
-        // Initial check
-        setOnlineStatus(navigator.onLine);
+      // Initial check
+      setOnlineStatus(navigator.onLine);
 
-        window.onload = () => {
-            const savedOrders = localStorage.getItem('allOrdersData');
-            if (savedOrders) {
-                allOrdersData = JSON.parse(savedOrders);
-            }
-            const token = localStorage.getItem('authToken');
-            if (token) {
-                showMainContent();
+      window.onload = () => {
+        const savedOrders = localStorage.getItem("allOrdersData");
+        if (savedOrders) {
+          allOrdersData = JSON.parse(savedOrders);
+        }
+        const token = localStorage.getItem("authToken");
+        if (token) {
+          showMainContent();
+        } else {
+          showLogin();
+        }
+        loadOfflineQueue();
+      };
+
+      async function login() {
+        const password = document.getElementById("password-input").value;
+        loginErrorP.textContent = "";
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/login`, {
+            method: "GET",
+            headers: { password: password },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("authToken", data.token);
+            localStorage.setItem("userClass", data.user);
+            localStorage.setItem("userType", data.type);
+            showMainContent();
+          } else {
+            const errorData = await response.json();
+            loginErrorP.textContent = `ログインに失敗しました: ${errorData.detail}`;
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+          loginErrorP.textContent = "サーバーとの通信に失敗しました。";
+          setOnlineStatus(false);
+        }
+      }
+
+      function logout() {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userClass");
+        localStorage.removeItem("userType");
+        localStorage.removeItem("allOrdersData");
+        localStorage.removeItem("offlineQueue");
+        if (orderUpdateInterval) {
+          clearInterval(orderUpdateInterval);
+        }
+        showLogin();
+      }
+
+      function showLogin() {
+        loginSection.style.display = "block";
+        mainSection.style.display = "none";
+        if (orderUpdateInterval) {
+          clearInterval(orderUpdateInterval);
+        }
+      }
+
+      let isFirstFetch = true;
+      function showMainContent() {
+        const userClass = localStorage.getItem("userClass");
+        userClassSpan.textContent = `${userClass}組 店員機B`;
+        loginSection.style.display = "none";
+        mainSection.style.display = "block";
+
+        isFirstFetch = true;
+        fetchAndRenderOrders(); // Initial fetch
+
+        if (orderUpdateInterval) {
+          clearInterval(orderUpdateInterval);
+        }
+        orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000); // Update every 1 seconds
+      }
+
+      function saveOfflineQueue() {
+        localStorage.setItem("offlineQueue", JSON.stringify(offlineQueue));
+      }
+
+      function loadOfflineQueue() {
+        const savedQueue = localStorage.getItem("offlineQueue");
+        if (savedQueue) {
+          offlineQueue = JSON.parse(savedQueue);
+          processOfflineQueue();
+        }
+      }
+
+      async function processOfflineQueue() {
+        if (isOffline || offlineQueue.length === 0) return;
+
+        const token = localStorage.getItem("authToken");
+        if (!token) return; // Can't process without a token
+
+        console.log(`Processing ${offlineQueue.length} offline changes.`);
+
+        while (offlineQueue.length > 0) {
+          const { orderId, newStatus, message } = offlineQueue[0];
+          try {
+            const response = await fetch(`${API_BASE_URL}/change_status`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token,
+              },
+              body: JSON.stringify({
+                order_id: orderId,
+                status: newStatus,
+                message: message,
+              }),
+            });
+
+            if (response.ok) {
+              offlineQueue.shift(); // Remove the successfully processed item
+              saveOfflineQueue();
             } else {
-                showLogin();
+              // If a request fails, stop processing to maintain order
+              console.error(
+                "Failed to sync offline change, stopping queue.",
+                await response.json()
+              );
+              setOnlineStatus(false); // Assume offline if server rejects our request
+              break;
             }
-            loadOfflineQueue();
-        };
+          } catch (error) {
+            console.error(
+              "Network error during offline queue processing, stopping queue.",
+              error
+            );
+            setOnlineStatus(false);
+            break;
+          }
+        }
 
-        async function login() {
-            const password = document.getElementById('password-input').value;
-            loginErrorP.textContent = '';
+        // Refresh data after processing the queue
+        if (offlineQueue.length === 0) {
+          fetchAndRenderOrders();
+        }
+      }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/login`, {
-                    method: 'GET',
-                    headers: { 'password': password }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('userClass', data.user);
-                    localStorage.setItem('userType', data.type);
-                    showMainContent();
+      async function fetchAndRenderOrders() {
+        const token = localStorage.getItem("authToken");
+        const userClass = localStorage.getItem("userClass");
+        if (!token || !userClass) {
+          logout();
+          return;
+        }
+        try {
+          if (isFirstFetch) {
+            // 初回のみlog_all
+            const response = await fetch(`${API_BASE_URL}/log_all`, {
+              headers: { Authorization: token },
+            });
+            if (!response.ok) {
+              if (response.status === 429) {
+                const retryAfter = response.headers.get("Retry-After");
+                let delay = 0;
+                const sec = parseFloat(retryAfter);
+                if (!isNaN(sec)) {
+                  delay = sec * 1000;
                 } else {
-                    const errorData = await response.json();
-                    loginErrorP.textContent = `ログインに失敗しました: ${errorData.detail}`;
+                  delay = 10000;
                 }
-            } catch (error) {
-                console.error('Login error:', error);
-                loginErrorP.textContent = 'サーバーとの通信に失敗しました。';
-                setOnlineStatus(false);
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('userClass');
-            localStorage.removeItem('userType');
-            localStorage.removeItem('allOrdersData');
-            localStorage.removeItem('offlineQueue');
-            if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-            }
-            showLogin();
-        }
-
-        function showLogin() {
-            loginSection.style.display = 'block';
-            mainSection.style.display = 'none';
-            if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-            }
-        }
-
-        let isFirstFetch = true;
-        function showMainContent() {
-            const userClass = localStorage.getItem('userClass');
-            userClassSpan.textContent = `${userClass}組 店員機B`;
-            loginSection.style.display = 'none';
-            mainSection.style.display = 'block';
-
-            isFirstFetch = true;
-            fetchAndRenderOrders(); // Initial fetch
-
-            if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-            }
-            orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000); // Update every 1 seconds
-        }
-
-        function saveOfflineQueue() {
-            localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
-        }
-
-        function loadOfflineQueue() {
-            const savedQueue = localStorage.getItem('offlineQueue');
-            if (savedQueue) {
-                offlineQueue = JSON.parse(savedQueue);
-                processOfflineQueue();
-            }
-        }
-
-        async function processOfflineQueue() {
-            if (isOffline || offlineQueue.length === 0) return;
-
-            const token = localStorage.getItem('authToken');
-            if (!token) return; // Can't process without a token
-
-            console.log(`Processing ${offlineQueue.length} offline changes.`);
-
-            while (offlineQueue.length > 0) {
-                const { orderId, newStatus, message } = offlineQueue[0];
-                try {
-                    const response = await fetch(`${API_BASE_URL}/change_status`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': token
-                        },
-                        body: JSON.stringify({
-                            order_id: orderId,
-                            status: newStatus,
-                            message: message
-                        })
-                    });
-
-                    if (response.ok) {
-                        offlineQueue.shift(); // Remove the successfully processed item
-                        saveOfflineQueue();
-                    } else {
-                        // If a request fails, stop processing to maintain order
-                        console.error('Failed to sync offline change, stopping queue.', await response.json());
-                        setOnlineStatus(false); // Assume offline if server rejects our request
-                        break;
-                    }
-                } catch (error) {
-                    console.error('Network error during offline queue processing, stopping queue.', error);
-                    setOnlineStatus(false);
-                    break;
+                console.warn(
+                  `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+                );
+                if (orderUpdateInterval) {
+                  clearInterval(orderUpdateInterval);
+                  orderUpdateInterval = null;
                 }
-            }
-
-            // Refresh data after processing the queue
-            if (offlineQueue.length === 0) {
-                fetchAndRenderOrders();
-            }
-        }
-
-        async function fetchAndRenderOrders() {
-            const token = localStorage.getItem('authToken');
-            const userClass = localStorage.getItem('userClass');
-            if (!token || !userClass) {
-                logout();
+                setTimeout(() => {
+                  if (!orderUpdateInterval) {
+                    fetchAndRenderOrders();
+                    orderUpdateInterval = setInterval(
+                      fetchAndRenderOrders,
+                      1000
+                    );
+                  }
+                }, Math.max(delay, 1000));
                 return;
+              }
+              throw new Error(`API Error: ${response.status}`);
             }
-            try {
-                if (isFirstFetch) {
-                    // 初回のみlog_all
-                    const response = await fetch(`${API_BASE_URL}/log_all`, {
-                        headers: { 'Authorization': token }
-                    });
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            const retryAfter = response.headers.get('Retry-After');
-                            let delay = 0;
-                            const sec = parseFloat(retryAfter);
-                            if (!isNaN(sec)) {
-                                delay = sec * 1000;
-                            } else {
-                                delay = 10000;
-                            }
-                            console.warn(`Too many requests, Retry after: ${retryAfter} (${delay}ms)`);
-                            if (orderUpdateInterval) {
-                                clearInterval(orderUpdateInterval);
-                                orderUpdateInterval = null;
-                            }
-                            setTimeout(() => {
-                                if (!orderUpdateInterval) {
-                                    fetchAndRenderOrders();
-                                    orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000);
-                                }
-                            }, Math.max(delay, 1000));
-                            return;
-                        }
-                        throw new Error(`API Error: ${response.status}`);
-                    }
-                    setOnlineStatus(true);
-                    allOrdersData = await response.json();
-                    localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
-                    renderTable(allOrdersData, userClass);
-                    isFirstFetch = false;
-                } else {
-                    // 2回目以降はcheck
-                    const response = await fetch(`${API_BASE_URL}/check`, {
-                        headers: { 'Authorization': token }
-                    });
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.status}`);
-                    }
-                    setOnlineStatus(true);
-                    const checkData = await response.json();
-                    // checkData: [{id, status, message, ...}]
-                    // allOrdersDataのstatus更新＋新規オーダー追加
-                    if (Array.isArray(checkData)) {
-                        checkData.forEach(update => {
-                            if (allOrdersData[update.order_id]) {
-                                allOrdersData[update.order_id].status = update.status;
-                                // historyは追加しない（message無視）
-                            } else if (update.order_items) {
-                                // 新規オーダー
-                                allOrdersData[update.order_id] = {
-                                    id: update.order_id,
-                                    user: userClass,
-                                    order_items: update.order_items,
-                                    status: update.status,
-                                    history: [{
-                                        timestamp: update.timestamp,
-                                        status: update.status,
-                                        message: update.message || '',
-                                        from: update.from
-                                    }]
-                                };
-                            }
-                        });
-                        localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
-                    }
-                    renderTable(allOrdersData, userClass);
+            setOnlineStatus(true);
+            allOrdersData = await response.json();
+            localStorage.setItem(
+              "allOrdersData",
+              JSON.stringify(allOrdersData)
+            );
+            renderTable(allOrdersData, userClass);
+            isFirstFetch = false;
+          } else {
+            // 2回目以降はcheck
+            const response = await fetch(`${API_BASE_URL}/check`, {
+              headers: { Authorization: token },
+            });
+            if (!response.ok) {
+              throw new Error(`API Error: ${response.status}`);
+            }
+            setOnlineStatus(true);
+            const checkData = await response.json();
+            // checkData: [{id, status, message, ...}]
+            // allOrdersDataのstatus更新＋新規オーダー追加
+            if (Array.isArray(checkData)) {
+              checkData.forEach((update) => {
+                if (allOrdersData[update.order_id]) {
+                  allOrdersData[update.order_id].status = update.status;
+                  // historyは追加しない（message無視）
+                } else if (update.order_items) {
+                  // 新規オーダー
+                  allOrdersData[update.order_id] = {
+                    id: update.order_id,
+                    user: userClass,
+                    order_items: update.order_items,
+                    status: update.status,
+                    history: [
+                      {
+                        timestamp: update.timestamp,
+                        status: update.status,
+                        message: update.message || "",
+                        from: update.from,
+                      },
+                    ],
+                  };
                 }
-            } catch (error) {
-                console.error('Failed to fetch orders, going offline:', error);
-                setOnlineStatus(false);
-                renderTable(allOrdersData, userClass); // Render with potentially stale data
+              });
+              localStorage.setItem(
+                "allOrdersData",
+                JSON.stringify(allOrdersData)
+              );
             }
+            renderTable(allOrdersData, userClass);
+          }
+        } catch (error) {
+          console.error("Failed to fetch orders, going offline:", error);
+          setOnlineStatus(false);
+          renderTable(allOrdersData, userClass); // Render with potentially stale data
         }
+      }
 
-        function renderTable(ordersData, userClass) {
-            const selectedClassData = classData.find(c => c.name === `${userClass}組`);
-            if (!selectedClassData) return;
+      function renderTable(ordersData, userClass) {
+        const selectedClassData = classData.find(
+          (c) => c.name === `${userClass}組`
+        );
+        if (!selectedClassData) return;
 
-            const items = selectedClassData.items;
+        const items = selectedClassData.items;
 
-            tableHead.innerHTML = '';
-            const headerRow = document.createElement('tr');
-            const headers = ["注文ID", ...items, "ステータス"];
-            headers.forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            tableHead.appendChild(headerRow);
+        tableHead.innerHTML = "";
+        const headerRow = document.createElement("tr");
+        const headers = ["注文ID", ...items, "ステータス"];
+        headers.forEach((text) => {
+          const th = document.createElement("th");
+          th.textContent = text;
+          headerRow.appendChild(th);
+        });
+        tableHead.appendChild(headerRow);
 
-            tableBody.innerHTML = '';
-            const ordersForClass = Object.values(ordersData).filter(o => o.user == userClass).sort((a, b) => b.id - a.id);
+        tableBody.innerHTML = "";
+        const ordersForClass = Object.values(ordersData)
+          .filter((o) => o.user == userClass)
+          .sort((a, b) => b.id - a.id);
 
-            ordersForClass.forEach(order => {
-                if (order.id < 7) return;  // 在庫管理用IDは表示しない
-                const tr = document.createElement('tr');
-                tr.dataset.status = order.status;
+        ordersForClass.forEach((order) => {
+          if (order.id < 7) return; // 在庫管理用IDは表示しない
+          const tr = document.createElement("tr");
+          tr.dataset.status = order.status;
 
-                const otherHistory = order.history.filter(h => h.status === 'その他');
-                const latestMessage = otherHistory.length > 0 ? otherHistory[otherHistory.length - 1].message : '';
-                tr.dataset.latestOtherMessage = latestMessage;
+          const otherHistory = order.history.filter(
+            (h) => h.status === "その他"
+          );
+          const latestMessage =
+            otherHistory.length > 0
+              ? otherHistory[otherHistory.length - 1].message
+              : "";
+          tr.dataset.latestOtherMessage = latestMessage;
 
-                const statusCell = document.createElement('td');
-                statusCell.className = 'status-cell';
-                statusCell.innerHTML = createStatusSelector(order);
+          const statusCell = document.createElement("td");
+          statusCell.className = "status-cell";
+          statusCell.innerHTML = createStatusSelector(order);
 
-                tr.innerHTML = `<td>${order.id}</td>` + items.map((item, idx) => `<td>${(order.order_items && order.order_items[`item_${idx + 1}`]) || 0}</td>`).join('');
-                tr.appendChild(statusCell);
-                tableBody.appendChild(tr);
-            });
-        }
+          tr.innerHTML =
+            `<td>${order.id}</td>` +
+            items
+              .map(
+                (item, idx) =>
+                  `<td>${
+                    (order.order_items &&
+                      order.order_items[`item_${idx + 1}`]) ||
+                    0
+                  }</td>`
+              )
+              .join("");
+          tr.appendChild(statusCell);
+          tableBody.appendChild(tr);
+        });
+      }
 
-        function createStatusSelector(order) {
-            const statusFlow = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
-            const isFinalStatus = order.status === "受け渡し済み";
-            const isOtherStatus = order.status === 'その他';
+      function createStatusSelector(order) {
+        const statusFlow = [
+          "呼び出し待ち",
+          "呼び出し中",
+          "調理待ち",
+          "調理中",
+          "調理済み",
+          "受け渡し済み",
+        ];
+        const isFinalStatus = order.status === "受け渡し済み";
+        const isOtherStatus = order.status === "その他";
 
-            let controlHtml;
+        let controlHtml;
 
-            if (isOtherStatus) {
-                const otherHistory = order.history.filter(h => h.status === 'その他');
-                const latestMessage = otherHistory.length > 0 ? otherHistory[otherHistory.length - 1].message : '';
-                controlHtml = `
+        if (isOtherStatus) {
+          const otherHistory = order.history.filter(
+            (h) => h.status === "その他"
+          );
+          const latestMessage =
+            otherHistory.length > 0
+              ? otherHistory[otherHistory.length - 1].message
+              : "";
+          controlHtml = `
                     <input type="text" class="other-input" value="${latestMessage}" 
                            onfocus="pauseAutoUpdate()" 
                            onblur="statusChanged(this, ${order.id}, true); resumeAutoUpdate();">
                     <button class="change-status-type-btn" onclick="showStatusChanger(this, ${order.id})">変更</button>
                 `;
-            } else {
-                let options = statusFlow.map(s =>
-                    `<option value="${s}" ${order.status === s ? 'selected' : ''}>${s}</option>`
-                ).join('');
-                options += `<option value="その他">その他</option>`;
-                controlHtml = `
+        } else {
+          let options = statusFlow
+            .map(
+              (s) =>
+                `<option value="${s}" ${
+                  order.status === s ? "selected" : ""
+                }>${s}</option>`
+            )
+            .join("");
+          options += `<option value="その他">その他</option>`;
+          controlHtml = `
                     <select class="status-select" 
                             onfocus="pauseAutoUpdate()" 
                             onchange="statusChanged(this, ${order.id})" 
                             onblur="resumeAutoUpdate()">${options}</select>
-                    <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" ${isFinalStatus ? 'disabled' : ''}>次へ</button>
+                    <button class="next-status-btn" onclick="goToNextStatus(this, ${
+                      order.id
+                    }, '${order.status}')" ${
+            isFinalStatus ? "disabled" : ""
+          }>次へ</button>
                 `;
-            }
-
-            return `<div class="status-control-container">${controlHtml}</div>`;
         }
 
-        async function goToNextStatus(buttonElement, orderId, currentStatus) {
-            const statusFlow = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
-            const currentIndex = statusFlow.indexOf(currentStatus);
-            if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
-                const nextStatus = statusFlow[currentIndex + 1];
-                const row = buttonElement.closest('tr');
-                await updateOrderStatus(row, orderId, nextStatus, null);
-            }
+        return `<div class="status-control-container">${controlHtml}</div>`;
+      }
+
+      async function goToNextStatus(buttonElement, orderId, currentStatus) {
+        const statusFlow = [
+          "呼び出し待ち",
+          "呼び出し中",
+          "調理待ち",
+          "調理中",
+          "調理済み",
+          "受け渡し済み",
+        ];
+        const currentIndex = statusFlow.indexOf(currentStatus);
+        if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
+          const nextStatus = statusFlow[currentIndex + 1];
+          const row = buttonElement.closest("tr");
+          await updateOrderStatus(row, orderId, nextStatus, null);
+        }
+      }
+
+      function pauseAutoUpdate() {
+        if (orderUpdateInterval) {
+          clearInterval(orderUpdateInterval);
+        }
+      }
+
+      function resumeAutoUpdate() {
+        if (orderUpdateInterval) {
+          clearInterval(orderUpdateInterval);
+        }
+        orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+      }
+
+      function showStatusChanger(buttonElement, orderId) {
+        const statusCell = buttonElement.closest(".status-cell");
+        const statuses = [
+          "呼び出し待ち",
+          "呼び出し中",
+          "調理待ち",
+          "調理中",
+          "調理済み",
+          "受け渡し済み",
+        ];
+
+        let options = statuses
+          .map((s) => `<option value="${s}">${s}</option>`)
+          .join("");
+        options += `<option value="その他" selected>その他</option>`;
+
+        statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${orderId})">${options}</select>`;
+        statusCell.querySelector("select").focus();
+      }
+
+      async function updateOrderStatus(
+        rowElement,
+        orderId,
+        newStatus,
+        message = null
+      ) {
+        if (isUpdateInProgress) return;
+        isUpdateInProgress = true;
+
+        if (rowElement) rowElement.classList.add("updating");
+        pauseAutoUpdate();
+
+        console.log(
+          `Updating order ${orderId} status to ${newStatus} with message: ${
+            message || "N/A"
+          }`
+        );
+
+        const token = localStorage.getItem("authToken");
+
+        if (isOffline) {
+          console.log("Offline: Queuing status change");
+          offlineQueue.push({ orderId, newStatus, message });
+          saveOfflineQueue();
+          await localUpdate(orderId, newStatus, message);
+          if (rowElement) rowElement.classList.remove("updating");
+          isUpdateInProgress = false;
+          resumeAutoUpdate();
+          return;
         }
 
-        function pauseAutoUpdate() {
-            if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-            }
+        try {
+          const response = await fetch(`${API_BASE_URL}/change_status`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+            body: JSON.stringify({
+              order_id: orderId,
+              status: newStatus,
+              message: message,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `API Error: ${response.status} - ${await response.text()}`
+            );
+          }
+
+          setOnlineStatus(true);
+          const res = await response.json();
+          if (res.result === "true") {
+            allOrdersData[orderId].status = newStatus;
+            allOrdersData[orderId].history.push({
+              timestamp: Math.floor(Date.now() / 1000),
+              status: newStatus,
+              message: message,
+              from: localStorage.getItem("userClass"),
+            });
+            localStorage.setItem(
+              "allOrdersData",
+              JSON.stringify(allOrdersData)
+            );
+            const userClass = localStorage.getItem("userClass");
+            renderTable(allOrdersData, userClass);
+          }
+        } catch (error) {
+          console.error("Failed to change status, going offline:", error);
+          setOnlineStatus(false);
+          offlineQueue.push({ orderId, newStatus, message });
+          saveOfflineQueue();
+          await localUpdate(orderId, newStatus, message);
+        } finally {
+          if (rowElement) rowElement.classList.remove("updating");
+          isUpdateInProgress = false;
+          resumeAutoUpdate();
         }
+      }
 
-        function resumeAutoUpdate() {
-            if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-            }
-            orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+      async function localUpdate(orderId, newStatus, message) {
+        const userClass = localStorage.getItem("userClass");
+
+        if (allOrdersData[orderId]) {
+          allOrdersData[orderId].status = newStatus;
+          const historyEntry = {
+            timestamp: Math.floor(Date.now() / 1000),
+            status: newStatus,
+            message: message || "",
+            from: "local", // Mark this as a local change
+          };
+          if (!allOrdersData[orderId].history) {
+            allOrdersData[orderId].history = [];
+          }
+          allOrdersData[orderId].history.push(historyEntry);
+
+          // Save the locally modified data and re-render
+          localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
+          renderTable(allOrdersData, userClass);
+        } else {
+          console.warn(
+            "Could not find order in local data to update:",
+            orderId
+          );
         }
+      }
 
-        function showStatusChanger(buttonElement, orderId) {
-            const statusCell = buttonElement.closest('.status-cell');
-            const statuses = ["呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み"];
+      function statusChanged(element, orderId, isOtherInput = false) {
+        const row = element.closest("tr");
+        let status,
+          message = null;
 
-            let options = statuses.map(s => `<option value="${s}">${s}</option>`).join('');
-            options += `<option value="その他" selected>その他</option>`; 
+        if (isOtherInput) {
+          status = "その他";
+          message = element.value;
+        } else {
+          status = element.value;
+          if (status === "その他") {
+            const currentTd = element.closest(".status-cell");
+            const latestMessage = row.dataset.latestOtherMessage || "";
 
-            statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${orderId})">${options}</select>`;
-            statusCell.querySelector('select').focus();
-        }
-
-        async function updateOrderStatus(rowElement, orderId, newStatus, message = null) {
-            if (isUpdateInProgress) return;
-            isUpdateInProgress = true;
-
-            if (rowElement) rowElement.classList.add('updating');
             pauseAutoUpdate();
-
-            console.log(`Updating order ${orderId} status to ${newStatus} with message: ${message || 'N/A'}`);
-
-            const token = localStorage.getItem('authToken');
-
-            if (isOffline) {
-                console.log('Offline: Queuing status change');
-                offlineQueue.push({ orderId, newStatus, message });
-                saveOfflineQueue();
-                await localUpdate(orderId, newStatus, message);
-                if (rowElement) rowElement.classList.remove('updating');
-                isUpdateInProgress = false;
-                resumeAutoUpdate();
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/change_status`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': token
-                    },
-                    body: JSON.stringify({
-                        order_id: orderId,
-                        status: newStatus,
-                        message: message
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} - ${await response.text()}`);
-                }
-
-                setOnlineStatus(true);
-                const res = await response.json();
-                if (res.result === "true") {
-                    allOrdersData[orderId].status = newStatus;
-                    allOrdersData[orderId].history.push({
-                        timestamp: Math.floor(Date.now() / 1000),
-                        status: newStatus,
-                        message: message,
-                        from: localStorage.getItem('userClass')
-                    });
-                    localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
-                    const userClass = localStorage.getItem('userClass');
-                    renderTable(allOrdersData, userClass);
-                }
-
-            } catch (error) {
-                console.error('Failed to change status, going offline:', error);
-                setOnlineStatus(false);
-                offlineQueue.push({ orderId, newStatus, message });
-                saveOfflineQueue();
-                await localUpdate(orderId, newStatus, message);
-            } finally {
-                if (rowElement) rowElement.classList.remove('updating');
-                isUpdateInProgress = false;
-                resumeAutoUpdate();
-            }
+            currentTd.innerHTML = createStatusSelector({
+              id: orderId,
+              status: "その他",
+              history: [],
+            });
+            const input = currentTd.querySelector(".other-input");
+            input.value = latestMessage;
+            input.focus();
+            resumeAutoUpdate(); // Resume after focus
+            return;
+          }
         }
 
-        async function localUpdate(orderId, newStatus, message) {
-            const userClass = localStorage.getItem('userClass');
-            
-            if (allOrdersData[orderId]) {
-                allOrdersData[orderId].status = newStatus;
-                const historyEntry = {
-                    timestamp: Math.floor(Date.now() / 1000),
-                    status: newStatus,
-                    message: message || '',
-                    from: 'local' // Mark this as a local change
-                };
-                if (!allOrdersData[orderId].history) {
-                    allOrdersData[orderId].history = [];
-                }
-                allOrdersData[orderId].history.push(historyEntry);
+        updateOrderStatus(row, orderId, status, message);
+      }
 
-                // Save the locally modified data and re-render
-                localStorage.setItem('allOrdersData', JSON.stringify(allOrdersData));
-                renderTable(allOrdersData, userClass);
-            } else {
-                console.warn('Could not find order in local data to update:', orderId);
-            }
+      function returnToMain() {
+        document.querySelector(".add_order-container").style.display = "none";
+        document.querySelector(".default-container").style.display = "block";
+      }
+      function addorderopen() {
+        document.querySelector(".add_order-container").style.display = "block";
+        document.querySelector(".default-container").style.display = "none";
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          window.location.href = "index.html";
+          return;
         }
-
-        function statusChanged(element, orderId, isOtherInput = false) {
-            const row = element.closest('tr');
-            let status, message = null;
-
-            if (isOtherInput) {
-                status = 'その他';
-                message = element.value;
-            } else {
-                status = element.value;
-                if (status === 'その他') {
-                    const currentTd = element.closest('.status-cell');
-                    const latestMessage = row.dataset.latestOtherMessage || '';
-                    
-                    pauseAutoUpdate();
-                    currentTd.innerHTML = createStatusSelector({ id: orderId, status: 'その他', history: [] });
-                    const input = currentTd.querySelector('.other-input');
-                    input.value = latestMessage;
-                    input.focus();
-                    resumeAutoUpdate(); // Resume after focus
-                    return;
-                }
-            }
-            
-            updateOrderStatus(row, orderId, status, message);
-        }
-
+        renderAddOrderForm();
+      }
     </script>
+    <script>
+      const addOrderForm = document.getElementById("add-order-form");
+      const addOrderErrorP = document.getElementById("add-order-error");
+      const addOrderSuccessP = document.getElementById("add-order-success");
 
-</body>
+      window.onload = () => {};
+
+      function renderAddOrderForm() {
+        const userClass = localStorage.getItem("userClass");
+        const selectedClassData = classData.find(
+          (c) => c.name === `${userClass}組`
+        );
+        if (!selectedClassData) {
+          addOrderErrorP.textContent =
+            "クラス情報が見つかりません。再度ログインしてください。";
+          return;
+        }
+
+        addOrderForm.innerHTML = "";
+        selectedClassData.items.forEach((item) => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+                    <label for="item-${item}">${item}:</label>
+                    <input type="number" id="item-${item}" min="0" value="0">
+                `;
+          addOrderForm.appendChild(div);
+        });
+        const submitButton = document.createElement("button");
+        submitButton.type = "submit";
+        submitButton.className = "btn";
+        submitButton.style.marginTop = "10px";
+        submitButton.textContent = "この内容で注文を追加";
+        addOrderForm.appendChild(submitButton);
+      }
+
+      async function addNewOrder() {
+        const token = localStorage.getItem("authToken");
+        const userClass = localStorage.getItem("userClass");
+        const selectedClassData = classData.find(
+          (c) => c.name === `${userClass}組`
+        );
+        addOrderErrorP.textContent = "";
+        addOrderSuccessP.textContent = "";
+
+        const order_items = {};
+        selectedClassData.items.forEach((item) => {
+          const quantity = parseInt(
+            document.getElementById(`item-${item}`).value,
+            10
+          );
+          if (quantity > 0) {
+            order_items[item] = quantity;
+          }
+        });
+
+        if (Object.keys(order_items).length === 0) {
+          addOrderErrorP.textContent = "商品を1つ以上入力してください。";
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/order`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+            body: JSON.stringify({ order_items }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `API Error: ${response.status} - ${errorData.detail}`
+            );
+          }
+
+          const result = await response.json();
+          addOrderSuccessP.textContent = `注文 (ID: ${result.order_id}) を正常に追加しました。`;
+          addOrderForm.reset();
+        } catch (error) {
+          console.error("Failed to add order:", error);
+          addOrderErrorP.textContent = `注文の追加に失敗しました: ${error.message}`;
+        }
+      }
+    </script>
+  </body>
 </html>

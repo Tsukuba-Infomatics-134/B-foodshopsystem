@@ -1,123 +1,133 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>新規注文追加</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <div class="container">
-        <h1>新規注文追加</h1>
+      <h1>新規注文追加</h1>
 
-        <div class="form-section">
-            <form id="add-order-form" onsubmit="event.preventDefault(); addNewOrder();">
-                <!-- Item inputs will be populated by JavaScript -->
-            </form>
-            <p id="add-order-error" class="error-message"></p>
-            <p id="add-order-success" class="success-message"></p>
-        </div>
-        <br>
-        <a href="index.html" class="btn">注文一覧に戻る</a>
+      <div class="form-section">
+        <form
+          id="add-order-form"
+          onsubmit="event.preventDefault(); addNewOrder();"
+        >
+          <!-- Item inputs will be populated by JavaScript -->
+        </form>
+        <p id="add-order-error" class="error-message"></p>
+        <p id="add-order-success" class="success-message"></p>
+      </div>
+      <br />
+      <a href="index.html" class="btn">注文一覧に戻る</a>
     </div>
 
     <script>
-        const API_BASE_URL = 'https://api.yaakiyu.f5.si';
-        // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
+      const API_BASE_URL = "https://api.yaakiyu.f5.si";
+      // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
 
-        const classData = [
-            { name: "1組", items: ["item_1", "item_2"] },
-            { name: "2組", items: ["プレーン", "チーズ"] },
-            { name: "3組", items: ["プレーン", "みたらし"] },
-            { name: "4組", items: ["プレーン", "マンゴー"] },
-            { name: "5組", items: ["コンソメ", "バター醤油"] },
-            { name: "6組", items: ["明太チーズ", "プレーン"] }
-        ];
+      const classData = [
+        { name: "1組", items: ["item_1", "item_2"] },
+        { name: "2組", items: ["プレーン", "チーズ"] },
+        { name: "3組", items: ["プレーン", "みたらし"] },
+        { name: "4組", items: ["プレーン", "マンゴー"] },
+        { name: "5組", items: ["コンソメ", "バター醤油"] },
+        { name: "6組", items: ["明太チーズ", "プレーン"] },
+      ];
 
-        const addOrderForm = document.getElementById('add-order-form');
-        const addOrderErrorP = document.getElementById('add-order-error');
-        const addOrderSuccessP = document.getElementById('add-order-success');
+      const addOrderForm = document.getElementById("add-order-form");
+      const addOrderErrorP = document.getElementById("add-order-error");
+      const addOrderSuccessP = document.getElementById("add-order-success");
 
-        window.onload = () => {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                window.location.href = 'index.html';
-                return;
-            }
-            renderAddOrderForm();
-        };
+      window.onload = () => {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          window.location.href = "index.html";
+          return;
+        }
+        renderAddOrderForm();
+      };
 
-        function renderAddOrderForm() {
-            const userClass = localStorage.getItem('userClass');
-            const selectedClassData = classData.find(c => c.name === `${userClass}組`);
-            if (!selectedClassData) {
-                addOrderErrorP.textContent = 'クラス情報が見つかりません。再度ログインしてください。';
-                return;
-            }
+      function renderAddOrderForm() {
+        const userClass = localStorage.getItem("userClass");
+        const selectedClassData = classData.find(
+          (c) => c.name === `${userClass}組`
+        );
+        if (!selectedClassData) {
+          addOrderErrorP.textContent =
+            "クラス情報が見つかりません。再度ログインしてください。";
+          return;
+        }
 
-            addOrderForm.innerHTML = '';
-            selectedClassData.items.forEach(item => {
-                const div = document.createElement('div');
-                div.innerHTML = `
+        addOrderForm.innerHTML = "";
+        selectedClassData.items.forEach((item) => {
+          const div = document.createElement("div");
+          div.innerHTML = `
                     <label for="item-${item}">${item}:</label>
                     <input type="number" id="item-${item}" min="0" value="0">
                 `;
-                addOrderForm.appendChild(div);
-            });
-            const submitButton = document.createElement('button');
-            submitButton.type = 'submit';
-            submitButton.className = 'btn';
-            submitButton.style.marginTop = '10px';
-            submitButton.textContent = 'この内容で注文を追加';
-            addOrderForm.appendChild(submitButton);
+          addOrderForm.appendChild(div);
+        });
+        const submitButton = document.createElement("button");
+        submitButton.type = "submit";
+        submitButton.className = "btn";
+        submitButton.style.marginTop = "10px";
+        submitButton.textContent = "この内容で注文を追加";
+        addOrderForm.appendChild(submitButton);
+      }
+
+      async function addNewOrder() {
+        const token = localStorage.getItem("authToken");
+        const userClass = localStorage.getItem("userClass");
+        const selectedClassData = classData.find(
+          (c) => c.name === `${userClass}組`
+        );
+        addOrderErrorP.textContent = "";
+        addOrderSuccessP.textContent = "";
+
+        const order_items = {};
+        selectedClassData.items.forEach((item) => {
+          const quantity = parseInt(
+            document.getElementById(`item-${item}`).value,
+            10
+          );
+          if (quantity > 0) {
+            order_items[item] = quantity;
+          }
+        });
+
+        if (Object.keys(order_items).length === 0) {
+          addOrderErrorP.textContent = "商品を1つ以上入力してください。";
+          return;
         }
 
-        async function addNewOrder() {
-            const token = localStorage.getItem('authToken');
-            const userClass = localStorage.getItem('userClass');
-            const selectedClassData = classData.find(c => c.name === `${userClass}組`);
-            addOrderErrorP.textContent = '';
-            addOrderSuccessP.textContent = '';
+        try {
+          const response = await fetch(`${API_BASE_URL}/order`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token,
+            },
+            body: JSON.stringify({ order_items }),
+          });
 
-            const order_items = {};
-            selectedClassData.items.forEach(item => {
-                const quantity = parseInt(document.getElementById(`item-${item}`).value, 10);
-                if (quantity > 0) {
-                    order_items[item] = quantity;
-                }
-            });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              `API Error: ${response.status} - ${errorData.detail}`
+            );
+          }
 
-            if (Object.keys(order_items).length === 0) {
-                addOrderErrorP.textContent = '商品を1つ以上入力してください。';
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/order`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': token
-                    },
-                    body: JSON.stringify({ order_items })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`API Error: ${response.status} - ${errorData.detail}`);
-                }
-                
-                const result = await response.json();
-                addOrderSuccessP.textContent = `注文 (ID: ${result.order_id}) を正常に追加しました。`;
-                addOrderForm.reset();
-
-            } catch (error) {
-                console.error('Failed to add order:', error);
-                addOrderErrorP.textContent = `注文の追加に失敗しました: ${error.message}`;
-            }
+          const result = await response.json();
+          addOrderSuccessP.textContent = `注文 (ID: ${result.order_id}) を正常に追加しました。`;
+          addOrderForm.reset();
+        } catch (error) {
+          console.error("Failed to add order:", error);
+          addOrderErrorP.textContent = `注文の追加に失敗しました: ${error.message}`;
         }
+      }
     </script>
-
-</body>
+  </body>
 </html>
