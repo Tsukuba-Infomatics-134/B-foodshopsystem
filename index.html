@@ -366,7 +366,7 @@
 
         tableHead.innerHTML = "";
         const headerRow = document.createElement("tr");
-        const headers = ["注文ID", ...items, "ステータス"];
+        const headers = ["注文ID", "注文時間", ...items, "ステータス"];
         headers.forEach((text) => {
           const th = document.createElement("th");
           th.textContent = text;
@@ -384,11 +384,8 @@
           const tr = document.createElement("tr");
           tr.dataset.status = order.status;
 
-          const otherHistory = order.history.filter(
-            (h) => h.status === "その他"
-          );
-          const latestMessage =
-            otherHistory.length > 0
+          const otherHistory = order.history.filter((h) => h.status === "その他");
+          const latestMessage = otherHistory.length > 0
               ? otherHistory[otherHistory.length - 1].message
               : "";
           tr.dataset.latestOtherMessage = latestMessage;
@@ -397,15 +394,12 @@
           statusCell.className = "status-cell";
           statusCell.innerHTML = createStatusSelector(order);
 
-          tr.innerHTML =
-            `<td>${order.id}</td>` +
-            items
-              .map(
+          const ordered_at = new Date(Number(order.history[0].timestamp)*1000);
+          tr.innerHTML = `<td>${order.id}</td><td>${ordered_at.toLocaleTimeString()}</td>` +
+            items.map(
                 (item, idx) =>
                   `<td>${
-                    (order.order_items &&
-                      order.order_items[`item_${idx + 1}`]) ||
-                    0
+                    (order.order_items && order.order_items[`item_${idx + 1}`]) || 0
                   }</td>`
               )
               .join("");
