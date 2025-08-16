@@ -419,7 +419,7 @@
         ];
         const isOtherStatus = order.status === "その他";
         // 使うべきでないときは「次へ」ボタンを無効化
-        const isNextEnabled = (order.status === "呼び出し待ち" || order.status === "調理済み");
+        const isNextEnabled = (order.status === "呼び出し中" || order.status === "調理済み");
 
         let controlHtml;
 
