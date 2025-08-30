@@ -73,8 +73,10 @@
     </div>
 
     <script>
-      const API_BASE_URL = "https://api.yaakiyu.f5.si";
+      const API_BASE_URL_PRODUCTION = "https://api.yaakiyu.f5.si";
+      const API_BASE_URL_DEV = "http://localhost:80";
       // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
+      let API_BASE_URL = API_BASE_URL_PRODUCTION;
 
       const classData = [
         { name: "1組", items: ["item_1", "item_2"] },
@@ -114,6 +116,20 @@
 
       // Initial check
       setOnlineStatus(navigator.onLine);
+
+      // onload時にdevサーバーが生きていればapiurlをdevに切り替える
+      function tryDevApiUrlSwitch() {
+        fetch(API_BASE_URL_DEV + "version", { method: "GET", cache: "no-store" })
+          .then(res => {
+            if (res.ok) {
+              API_BASE_URL = API_BASE_URL_DEV;
+              console.warn("apiurlを開発環境に切り替えました");
+            }
+          })
+          .catch(() => {
+            // devサーバーが落ちている場合は何もしない
+          });
+      }
 
       window.onload = () => {
         const savedOrders = localStorage.getItem("allOrdersData");
