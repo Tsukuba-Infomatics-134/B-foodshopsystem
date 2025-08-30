@@ -322,6 +322,33 @@
               headers: { Authorization: token },
             });
             if (!response.ok) {
+              if (response.status === 429) {
+                const retryAfter = response.headers.get("Retry-After");
+                let delay = 0;
+                const sec = parseFloat(retryAfter);
+                if (!isNaN(sec)) {
+                  delay = sec * 1000;
+                } else {
+                  delay = 1000;
+                }
+                console.warn(
+                  `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+                );
+                if (orderUpdateInterval) {
+                  clearInterval(orderUpdateInterval);
+                  orderUpdateInterval = null;
+                }
+                setTimeout(() => {
+                  if (!orderUpdateInterval) {
+                    fetchAndRenderOrders();
+                    orderUpdateInterval = setInterval(
+                      fetchAndRenderOrders,
+                      1000
+                    );
+                  }
+                }, Math.max(delay, 1000));
+                return;
+              }
               throw new Error(`API Error: ${response.status}`);
             }
             setOnlineStatus(true);
