@@ -301,7 +301,7 @@
                 delay = 10000;
               }
               console.warn(
-                `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+                `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
               );
               if (orderUpdateInterval) {
                 clearInterval(orderUpdateInterval);
@@ -345,7 +345,7 @@
                 delay = 1000;
               }
               console.warn(
-                `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+                `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
               );
               if (orderUpdateInterval) {
                 clearInterval(orderUpdateInterval);
