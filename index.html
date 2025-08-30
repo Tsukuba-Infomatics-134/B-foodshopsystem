@@ -110,11 +110,11 @@
         if (online === 0) {
           isOffline = false;
         }
-        else if (offline === 1) {
+        else if (online === 1) {
           isOffline = true;
           offlineNotification.innerHTML = "現在オフラインです。変更はローカルに保存され、接続が回復次第サーバーに送信されます。";
         }
-        else if (offline === 2) {
+        else if (online === 2) {
           // 主に429の時に表示する
           isOffline = true;
           offlineNotification.innerHTML = "現在リクエストの準備中です。変更はローカルに保存され、準備ができ次第サーバーに送信されます。";
