@@ -117,7 +117,7 @@
       // Initial check
       setOnlineStatus(navigator.onLine);
 
-      // onload時にdevサーバーが生きていればapiurlをdevに切り替える
+      // devサーバーが生きていればapiurlをdevに切り替える
       function tryDevApiUrlSwitch() {
         fetch(API_BASE_URL_DEV + "/version", { method: "GET", cache: "no-store" })
           .then(res => {
