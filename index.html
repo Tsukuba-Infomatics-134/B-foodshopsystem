@@ -103,19 +103,30 @@
       let isUpdateInProgress = false;
       let allOrdersData = {}; // To hold the last known state of all orders
 
-      window.addEventListener("online", () => setOnlineStatus(true));
-      window.addEventListener("offline", () => setOnlineStatus(false));
+      window.addEventListener("online", () => setOnlineStatus(0));
+      window.addEventListener("offline", () => setOnlineStatus(1));
 
       function setOnlineStatus(online) {
-        isOffline = !online;
+        if (online === 0) {
+          isOffline = false;
+        }
+        else if (offline === 1) {
+          isOffline = true;
+          offlineNotification.innerHTML = "現在オフラインです。変更はローカルに保存され、接続が回復次第サーバーに送信されます。";
+        }
+        else if (offline === 2) {
+          // 主に429の時に表示する
+          isOffline = true;
+          offlineNotification.innerHTML = "現在リクエストの準備中です。変更はローカルに保存され、準備ができ次第サーバーに送信されます。";
+        }
         offlineNotification.style.display = isOffline ? "block" : "none";
-        if (online) {
+        if (!isOffline) {
           processOfflineQueue();
         }
       }
 
       // Initial check
-      setOnlineStatus(navigator.onLine);
+      setOnlineStatus(navigator.onLine ? 0 : 1);
 
       // devサーバーが生きていればapiurlをdevに切り替える
       function tryDevApiUrlSwitch() {
@@ -165,11 +176,12 @@
           } else {
             const errorData = await response.json();
             loginErrorP.textContent = `ログインに失敗しました: ${errorData.detail}`;
+            setOnlineStatus(1);
           }
         } catch (error) {
           console.error("Login error:", error);
           loginErrorP.textContent = "サーバーとの通信に失敗しました。";
-          setOnlineStatus(false);
+          setOnlineStatus(1);
         }
       }
 
@@ -254,7 +266,7 @@
             } else {
               console.error("Error:", response.text());
               offlineQueue = pre_queue; // Restore original queue
-              setOnlineStatus(false);
+              setOnlineStatus(1);
               return;
             }
           });
@@ -279,37 +291,38 @@
             const response = await fetch(`${API_BASE_URL}/log_all`, {
               headers: { Authorization: token },
             });
-            if (!response.ok) {
-              if (response.status === 429) {
-                const retryAfter = response.headers.get("Retry-After");
-                let delay = 0;
-                const sec = parseFloat(retryAfter);
-                if (!isNaN(sec)) {
-                  delay = sec * 1000;
-                } else {
-                  delay = 10000;
-                }
-                console.warn(
-                  `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
-                );
-                if (orderUpdateInterval) {
-                  clearInterval(orderUpdateInterval);
-                  orderUpdateInterval = null;
-                }
-                setTimeout(() => {
-                  if (!orderUpdateInterval) {
-                    fetchAndRenderOrders();
-                    orderUpdateInterval = setInterval(
-                      fetchAndRenderOrders,
-                      1000
-                    );
-                  }
-                }, Math.max(delay, 1000));
-                return;
+            if (response.status === 429) {
+              const retryAfter = response.headers.get("Retry-After");
+              let delay = 0;
+              const sec = parseFloat(retryAfter);
+              if (!isNaN(sec)) {
+                delay = sec * 1000;
+              } else {
+                delay = 10000;
               }
+              console.warn(
+                `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+              );
+              if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+                orderUpdateInterval = null;
+              }
+              setTimeout(() => {
+                if (!orderUpdateInterval) {
+                  fetchAndRenderOrders();
+                  orderUpdateInterval = setInterval(
+                    fetchAndRenderOrders,
+                    1000
+                  );
+                }
+              }, Math.max(delay, 1000));
+              setOnlineStatus(2); // log_allのレート制限は往々にして長い
+              return;
+            }
+            if (!response.ok) {
               throw new Error(`API Error: ${response.status}`);
             }
-            setOnlineStatus(true);
+            setOnlineStatus(0);
             allOrdersData = await response.json();
             localStorage.setItem(
               "allOrdersData",
@@ -322,37 +335,37 @@
             const response = await fetch(`${API_BASE_URL}/check`, {
               headers: { Authorization: token },
             });
-            if (!response.ok) {
-              if (response.status === 429) {
-                const retryAfter = response.headers.get("Retry-After");
-                let delay = 0;
-                const sec = parseFloat(retryAfter);
-                if (!isNaN(sec)) {
-                  delay = sec * 1000;
-                } else {
-                  delay = 1000;
-                }
-                console.warn(
-                  `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
-                );
-                if (orderUpdateInterval) {
-                  clearInterval(orderUpdateInterval);
-                  orderUpdateInterval = null;
-                }
-                setTimeout(() => {
-                  if (!orderUpdateInterval) {
-                    fetchAndRenderOrders();
-                    orderUpdateInterval = setInterval(
-                      fetchAndRenderOrders,
-                      1000
-                    );
-                  }
-                }, Math.max(delay, 1000));
-                return;
+            if (response.status === 429) {
+              const retryAfter = response.headers.get("Retry-After");
+              let delay = 0;
+              const sec = parseFloat(retryAfter);
+              if (!isNaN(sec)) {
+                delay = sec * 1000;
+              } else {
+                delay = 1000;
               }
+              console.warn(
+                `Too many requests, Retry after: ${retryAfter} (${delay}ms)`
+              );
+              if (orderUpdateInterval) {
+                clearInterval(orderUpdateInterval);
+                orderUpdateInterval = null;
+              }
+              setTimeout(() => {
+                if (!orderUpdateInterval) {
+                  fetchAndRenderOrders();
+                  orderUpdateInterval = setInterval(
+                    fetchAndRenderOrders,
+                    1000
+                  );
+                }
+              }, Math.max(delay, 1000));
+              return;
+            }
+            if (!response.ok) {
               throw new Error(`API Error: ${response.status}`);
             }
-            setOnlineStatus(true);
+            setOnlineStatus(0);
             const checkData = await response.json();
             // checkData: [{id, status, message, ...}]
             // allOrdersDataのstatus更新＋新規オーダー追加
@@ -388,7 +401,7 @@
           }
         } catch (error) {
           console.error("Failed to fetch orders, going offline:", error);
-          setOnlineStatus(false);
+          setOnlineStatus(1);
           renderTable(allOrdersData, userClass); // Render with potentially stale data
         }
       }
@@ -611,7 +624,7 @@
             );
           }
 
-          setOnlineStatus(true);
+          setOnlineStatus(0);
           const res = await response.json();
           if (res.result === "true") {
             allOrdersData[orderId].status = newStatus;
@@ -630,7 +643,7 @@
           }
         } catch (error) {
           console.error("Failed to change status, going offline:", error);
-          setOnlineStatus(false);
+          setOnlineStatus(1);
           offlineQueue.push({ orderId, newStatus, message });
           saveOfflineQueue();
           await localUpdate(orderId, newStatus, message);
