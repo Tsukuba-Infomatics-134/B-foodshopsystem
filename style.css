@@ -170,9 +170,10 @@ tr[data-status="受け渡し済み"] {
 tr[data-status="受け渡し済み"] td:not(.status-cell) {
     text-decoration: line-through;
 }
-tr[data-status="その他"] {
-    background-color: #fdedef; /* Paler Red */
-    border-left-color: #dc3545; /* Red */
+tr[data-status="キャンセル済み"] {
+    background-color: #f8f9fa98;
+    border-left-color: #6c757d; /* Grey */
+    color: #6c757d;
 }
 
 tr[data-status]:hover {

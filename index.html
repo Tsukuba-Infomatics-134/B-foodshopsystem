@@ -86,6 +86,9 @@
         { name: "5組", items: ["コンソメ", "バター醤油"] },
         { name: "6組", items: ["明太チーズ", "プレーン"] },
       ];
+      const statusFlow = [
+        "呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み", "キャンセル済み"
+      ];
 
       const tableHead = document.querySelector("#order-table thead");
       const tableBody = document.getElementById("order-table-body");
@@ -430,15 +433,6 @@
           const tr = document.createElement("tr");
           tr.dataset.status = order.status;
 
-          const otherHistory = order.history.filter(
-            (h) => h.status === "その他"
-          );
-          const latestMessage =
-            otherHistory.length > 0
-              ? otherHistory[otherHistory.length - 1].message
-              : "";
-          tr.dataset.latestOtherMessage = latestMessage;
-
           const statusCell = document.createElement("td");
           statusCell.className = "status-cell";
           statusCell.innerHTML = createStatusSelector(order);
@@ -464,70 +458,22 @@
       }
 
       function createStatusSelector(order) {
-        const statusFlow = [
-          "呼び出し待ち",
-          "呼び出し中",
-          "調理待ち",
-          "調理中",
-          "調理済み",
-          "受け渡し済み",
-        ];
-        const isOtherStatus = order.status === "その他";
         // 使うべきでないときは「次へ」ボタンを無効化
-        const isNextEnabled =
-          order.status === "呼び出し中" || order.status === "調理済み";
+        const isNextEnabled = order.status === "呼び出し中" || order.status === "調理済み";
 
-        let controlHtml;
-
-        if (isOtherStatus) {
-          const otherHistory = order.history.filter(
-            (h) => h.status === "その他"
-          );
-          const latestMessage =
-            otherHistory.length > 0
-              ? otherHistory[otherHistory.length - 1].message
-              : "";
-          controlHtml = `
-                    <input type="text" class="other-input" value="${latestMessage}" 
-                           onfocus="pauseAutoUpdate()" 
-                           onblur="statusChanged(this, ${order.id}, true); resumeAutoUpdate();">
-                    <button class="change-status-type-btn" onclick="showStatusChanger(this, ${order.id})">変更</button>
-                `;
-        } else {
-          let options = statusFlow
-            .map(
-              (s) =>
-                `<option value="${s}" ${
-                  order.status === s ? "selected" : ""
-                }>${s}</option>`
-            )
-            .join("");
-          options += `<option value="その他">その他</option>`;
-          controlHtml = `
-                    <select class="status-select" 
-                            onfocus="pauseAutoUpdate()" 
-                            onchange="statusChanged(this, ${order.id})" 
-                            onblur="resumeAutoUpdate()">${options}</select>
-                    <button class="next-status-btn" onclick="goToNextStatus(this, ${
-                      order.id
-                    }, '${order.status}')" ${
-            !isNextEnabled ? "disabled" : ""
-          }>次へ</button>
-                `;
-        }
+        let options = statusFlow.map(
+          (s) => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`
+        ).join("");
+        let controlHtml = `
+          <select class="status-select" onfocus="pauseAutoUpdate()" onchange="statusChanged(this, ${order.id})" 
+            onblur="resumeAutoUpdate()">${options}</select>
+          <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" 
+            ${!isNextEnabled ? "disabled" : ""}>次へ</button>`;
 
         return `<div class="status-control-container">${controlHtml}</div>`;
       }
 
       async function goToNextStatus(buttonElement, orderId, currentStatus) {
-        const statusFlow = [
-          "呼び出し待ち",
-          "呼び出し中",
-          "調理待ち",
-          "調理中",
-          "調理済み",
-          "受け渡し済み",
-        ];
         const currentIndex = statusFlow.indexOf(currentStatus);
         if (currentIndex > -1 && currentIndex < statusFlow.length - 1) {
           const nextStatus = statusFlow[currentIndex + 1];
@@ -551,19 +497,8 @@
 
       function showStatusChanger(buttonElement, orderId) {
         const statusCell = buttonElement.closest(".status-cell");
-        const statuses = [
-          "呼び出し待ち",
-          "呼び出し中",
-          "調理待ち",
-          "調理中",
-          "調理済み",
-          "受け渡し済み",
-        ];
 
-        let options = statuses
-          .map((s) => `<option value="${s}">${s}</option>`)
-          .join("");
-        options += `<option value="その他" selected>その他</option>`;
+        let options = statusFlow.map((s) => `<option value="${s}">${s}</option>`).join("");
 
         statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${orderId})">${options}</select>`;
         statusCell.querySelector("select").focus();
@@ -700,34 +635,11 @@
         }
       }
 
-      function statusChanged(element, orderId, isOtherInput = false) {
+      function statusChanged(element, orderId) {
         const row = element.closest("tr");
-        let status,
-          message = null;
+        let status, message = null;
 
-        if (isOtherInput) {
-          status = "その他";
-          message = element.value;
-        } else {
-          status = element.value;
-          if (status === "その他") {
-            const currentTd = element.closest(".status-cell");
-            const latestMessage = row.dataset.latestOtherMessage || "";
-
-            pauseAutoUpdate();
-            currentTd.innerHTML = createStatusSelector({
-              id: orderId,
-              status: "その他",
-              history: [],
-            });
-            const input = currentTd.querySelector(".other-input");
-            input.value = latestMessage;
-            input.focus();
-            resumeAutoUpdate(); // Resume after focus
-            return;
-          }
-        }
-
+        status = element.value;
         updateOrderStatus(row, orderId, status, message);
       }
 
