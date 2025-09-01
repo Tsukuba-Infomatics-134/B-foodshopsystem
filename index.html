@@ -103,8 +103,6 @@
       let isUpdateInProgress = false;
       let allOrdersData = {}; // To hold the last known state of all orders
 
-      window.addEventListener("online", () => setOnlineStatus(0));
-      window.addEventListener("offline", () => setOnlineStatus(1));
 
       function setOnlineStatus(online) {
         if (online === 0) {
@@ -127,6 +125,8 @@
 
       // Initial check
       setOnlineStatus(navigator.onLine ? 0 : 1);
+      window.addEventListener("online", () => setOnlineStatus(0));
+      window.addEventListener("offline", () => setOnlineStatus(1));
 
       // devサーバーが生きていればapiurlをdevに切り替える
       function tryDevApiUrlSwitch() {
@@ -219,7 +219,7 @@
         if (orderUpdateInterval) {
           clearInterval(orderUpdateInterval);
         }
-        orderUpdateInterval = setInterval(fetchAndRenderOrders, 1000); // Update every 1 seconds
+        orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000); // Update every 2 seconds
       }
 
       function saveOfflineQueue() {
@@ -251,24 +251,26 @@
           saveOfflineQueue();
         }
         if (body.length > 0) {
-          fetch(apiurl + "change_status_multi", {
+          const userClass = localStorage.getItem("userClass");
+          fetch(`${API_BASE_URL}/change_status_multi`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              authorization: auth_key,
+              authorization: token,
             },
             body: JSON.stringify({
               body: body,
-              from_: 1,
+              from_: userClass,
             }),
-          }).then((response) => {
-            if (response.status === 200) {
-            } else {
-              console.error("Error:", response.text());
-              offlineQueue = pre_queue; // Restore original queue
-              setOnlineStatus(1);
-              return;
+          }).then(async (response) => {
+            if (!response.ok) {
+              throw new Error(`API Error: ${await response.text()}`);
             }
+          }).catch((error) => {
+            console.error("Error:", error);
+            offlineQueue = pre_queue; // Restore original queue
+            setOnlineStatus(1);
+            return;
           });
         }
 
@@ -310,10 +312,7 @@
               setTimeout(() => {
                 if (!orderUpdateInterval) {
                   fetchAndRenderOrders();
-                  orderUpdateInterval = setInterval(
-                    fetchAndRenderOrders,
-                    1000
-                  );
+                  orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
                 }
               }, Math.max(delay, 1000));
               setOnlineStatus(2); // log_allのレート制限は往々にして長い
@@ -354,10 +353,7 @@
               setTimeout(() => {
                 if (!orderUpdateInterval) {
                   fetchAndRenderOrders();
-                  orderUpdateInterval = setInterval(
-                    fetchAndRenderOrders,
-                    1000
-                  );
+                  orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
                 }
               }, Math.max(delay, 1000));
               return;
@@ -550,7 +546,7 @@
         if (orderUpdateInterval) {
           clearInterval(orderUpdateInterval);
         }
-        orderUpdateInterval = setInterval(fetchAndRenderOrders, 5000);
+        orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
       }
 
       function showStatusChanger(buttonElement, orderId) {
@@ -617,7 +613,30 @@
               message: message,
             }),
           });
-
+          if (response.status === 429) {
+            const retryAfter = response.headers.get("Retry-After");
+            let delay = 0;
+            const sec = parseFloat(retryAfter);
+            if (!isNaN(sec)) {
+              delay = sec * 1000;
+            } else {
+              delay = 1000;
+            }
+            console.warn(
+              `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
+            );
+            offlineQueue.push({ orderId, newStatus, message });
+            saveOfflineQueue();
+            await localUpdate(orderId, newStatus, message);
+            if (rowElement) rowElement.classList.remove("updating");
+            isUpdateInProgress = false;
+            setTimeout(() => {
+              setOnlineStatus(0);
+              resumeAutoUpdate();
+            }, Math.max(delay, 1000));
+            setOnlineStatus(2); // 429の時は一時的にオフライン表示
+            return;
+          }
           if (!response.ok) {
             throw new Error(
               `API Error: ${response.status} - ${await response.text()}`
@@ -731,8 +750,6 @@
       const addOrderForm = document.getElementById("add-order-form");
       const addOrderErrorP = document.getElementById("add-order-error");
       const addOrderSuccessP = document.getElementById("add-order-success");
-
-      window.onload = () => {};
 
       function renderAddOrderForm() {
         const userClass = localStorage.getItem("userClass");
