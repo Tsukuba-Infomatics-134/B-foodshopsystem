@@ -101,6 +101,7 @@
       let offlineQueue = [];
       let isUpdateInProgress = false;
       let allOrdersData = {}; // To hold the last known state of all orders
+      let isRenderPaused = false;
 
 
       function setOnlineStatus(online) {
@@ -258,14 +259,36 @@
           });
         }
         saveOfflineQueue();
+      }
 
-        // Refresh data after processing the queue
-        if (offlineQueue.length === 0) {
-          fetchAndRenderOrders();
+      function apiErrorHandle(response) {
+        if (response.ok) return;
+        if (response.status === 401) {
+          // おそらく有効期限切れなのでログアウトする。
+          console.warn("401 Error; Auto logout...");
+          logout();
+          return 2000;
         }
+        if (response.status === 429) {
+          const retryAfter = response.headers.get("Retry-After");
+          let delay = 0;
+          const sec = parseFloat(retryAfter);
+          if (!isNaN(sec)) {
+            delay = sec * 1000;
+          } else {
+            delay = 10000;
+          }
+          console.warn(
+            `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
+          );
+          setOnlineStatus(2);
+          return Math.max(delay, 1000);
+        }
+        throw new Error(`API Error: ${response.status}`);
       }
 
       async function fetchAndRenderOrders() {
+        console.log("aaa");
         const token = localStorage.getItem("authToken");
         const userClass = localStorage.getItem("userClass");
         if (!token || !userClass) {
@@ -279,28 +302,10 @@
             const response = await fetch(`${API_BASE_URL}/log_all`, {
               headers: { Authorization: token },
             });
-            if (response.status === 429) {
-              const retryAfter = response.headers.get("Retry-After");
-              let delay = 0;
-              const sec = parseFloat(retryAfter);
-              if (!isNaN(sec)) {
-                delay = sec * 1000;
-              } else {
-                delay = 10000;
-              }
-              console.warn(
-                `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
-              );
-              if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-                orderUpdateInterval = null;
-              }
-              setTimeout(fetchAndRenderOrders, Math.max(delay, 1000));
-              setOnlineStatus(2); // log_allのレート制限は往々にして長い
-              return;
-            }
             if (!response.ok) {
-              throw new Error(`API Error: ${response.status}`);
+              const after = apiErrorHandle(response);
+              setTimeout(fetchAndRenderOrders, after);
+              return;
             }
             setOnlineStatus(0);
             allOrdersData = await response.json();
@@ -308,34 +313,17 @@
               "allOrdersData",
               JSON.stringify(allOrdersData)
             );
-            renderTable(allOrdersData, userClass);
+            if (!isRenderPaused) renderTable(allOrdersData, userClass);
             isFirstFetch = false;
           } else {
             // 2回目以降はcheck
             const response = await fetch(`${API_BASE_URL}/check`, {
               headers: { Authorization: token },
             });
-            if (response.status === 429) {
-              const retryAfter = response.headers.get("Retry-After");
-              let delay = 0;
-              const sec = parseFloat(retryAfter);
-              if (!isNaN(sec)) {
-                delay = sec * 1000;
-              } else {
-                delay = 1000;
-              }
-              console.warn(
-                `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
-              );
-              if (orderUpdateInterval) {
-                clearInterval(orderUpdateInterval);
-                orderUpdateInterval = null;
-              }
-              setTimeout(fetchAndRenderOrders, Math.max(delay, 1000));
-              return;
-            }
             if (!response.ok) {
-              throw new Error(`API Error: ${response.status}`);
+              const after = apiErrorHandle(response);
+              setTimeout(fetchAndRenderOrders, after);
+              return;
             }
             setOnlineStatus(0);
             const checkData = await response.json();
@@ -364,12 +352,12 @@
               });
               localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
             }
-            renderTable(allOrdersData, userClass);
+            if (!isRenderPaused) renderTable(allOrdersData, userClass);
           }
         } catch (error) {
           console.error("Failed to fetch orders, going offline:", error);
           setOnlineStatus(1);
-          renderTable(allOrdersData, userClass); // Render with potentially stale data
+          if (!isRenderPaused) renderTable(allOrdersData, userClass); // Render with potentially stale data
         }
         setTimeout(() => {fetchAndRenderOrders();}, 2000);
       }
@@ -434,7 +422,8 @@
           (s) => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`
         ).join("");
         let controlHtml = `
-          <select class="status-select" onchange="statusChanged(this, ${order.id})">${options}</select>
+          <select class="status-select" onchange="statusChanged(this, ${order.id});isRenderPaused=false;"
+            onfocus="isRenderPaused=true;" onblur="isRenderPaused=false;">${options}</select>
           <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" 
             ${!isNextEnabled ? "disabled" : ""}>次へ</button>`;
 
@@ -501,33 +490,14 @@
               message: message,
             }),
           });
-          if (response.status === 429) {
-            const retryAfter = response.headers.get("Retry-After");
-            let delay = 0;
-            const sec = parseFloat(retryAfter);
-            if (!isNaN(sec)) {
-              delay = sec * 1000;
-            } else {
-              delay = 1000;
-            }
-            console.warn(
-              `Too many requests, Retry after: ${retryAfter} (${Math.max(delay, 1000)}ms)`
-            );
+          if (!response.ok) {
+            const after = apiErrorHandle(response);
             offlineQueue.push({ orderId, newStatus, message });
             saveOfflineQueue();
             await localUpdate(orderId, newStatus, message);
             if (rowElement) rowElement.classList.remove("updating");
             isUpdateInProgress = false;
-            setTimeout(() => {
-              setOnlineStatus(0);
-            }, Math.max(delay, 1000));
-            setOnlineStatus(2); // 429の時は一時的にオフライン表示
             return;
-          }
-          if (!response.ok) {
-            throw new Error(
-              `API Error: ${response.status} - ${await response.text()}`
-            );
           }
 
           setOnlineStatus(0);
@@ -545,7 +515,7 @@
               JSON.stringify(allOrdersData)
             );
             const userClass = localStorage.getItem("userClass");
-            renderTable(allOrdersData, userClass);
+            if (!isRenderPaused) renderTable(allOrdersData, userClass);
           }
         } catch (error) {
           console.error("Failed to change status, going offline:", error);
@@ -577,7 +547,7 @@
 
           // Save the locally modified data and re-render
           localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
-          renderTable(allOrdersData, userClass);
+          if (!isRenderPaused) renderTable(allOrdersData, userClass);
         } else {
           console.warn(
             "Could not find order in local data to update:",
@@ -708,7 +678,7 @@
             ],
           };
           localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
-          renderTable(allOrdersData, userClass);
+          if (!isRenderPaused) renderTable(allOrdersData, userClass);
         } catch (error) {
           console.error("Failed to add order:", error);
           addOrderErrorP.textContent = `注文の追加に失敗しました: ${error.message}`;
