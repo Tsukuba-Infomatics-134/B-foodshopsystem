@@ -78,12 +78,12 @@
       let API_BASE_URL = API_BASE_URL_PRODUCTION;
 
       const classData = [
-        { name: "1組", items: ["プレーン", "抹茶"] },
-        { name: "2組", items: ["豚玉", "豚玉チーズ"] },
-        { name: "3組", items: ["みたらし&アイス", "カラフルあんこ"] },
-        { name: "4組", items: ["抹茶白玉小豆", "マンゴー"] },
-        { name: "5組", items: ["コンソメ", "バター醤油"] },
-        { name: "6組", items: ["ソース", "明太もち"] },
+        { name: "1組", items: ["プレーン", "抹茶"], price: [200, 200] },
+        { name: "2組", items: ["豚玉", "豚玉チーズ"], price: [300, 300] },
+        { name: "3組", items: ["みたらし&アイス", "カラフルあんこ"], price: [200, 200] },
+        { name: "4組", items: ["抹茶白玉小豆", "マンゴー"], price: [200, 200] },
+        { name: "5組", items: ["コンソメ", "バター醤油"], price: [200, 200] },
+        { name: "6組", items: ["ソース", "明太もち"], price: [200, 200] },
       ];
       const statusFlow = [
         "呼び出し待ち", "呼び出し中", "調理待ち", "受け渡し済み", "キャンセル済み"
@@ -250,7 +250,6 @@
           const { orderId, newStatus, message } = offlineQueue[0];
           body.push({ order_id: orderId, status: newStatus, message: message });
           offlineQueue.shift(); // Remove the successfully processed item
-          saveOfflineQueue();
         }
         if (body.length > 0) {
           const userClass = localStorage.getItem("userClass");
@@ -275,6 +274,7 @@
             return;
           });
         }
+        saveOfflineQueue();
 
         // Refresh data after processing the queue
         if (offlineQueue.length === 0) {
