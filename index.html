@@ -95,11 +95,8 @@
       const mainSection = document.getElementById("main-section");
       const userClassSpan = document.getElementById("user-class");
       const loginErrorP = document.getElementById("login-error");
-      const offlineNotification = document.getElementById(
-        "offline-notification"
-      );
+      const offlineNotification = document.getElementById("offline-notification");
 
-      let orderUpdateInterval;
       let isOffline = false;
       let offlineQueue = [];
       let isUpdateInProgress = false;
@@ -193,18 +190,12 @@
         localStorage.removeItem("userType");
         localStorage.removeItem("allOrdersData");
         localStorage.removeItem("offlineQueue");
-        if (orderUpdateInterval) {
-          clearInterval(orderUpdateInterval);
-        }
         showLogin();
       }
 
       function showLogin() {
         loginSection.style.display = "block";
         mainSection.style.display = "none";
-        if (orderUpdateInterval) {
-          clearInterval(orderUpdateInterval);
-        }
       }
 
       let isFirstFetch = true;
@@ -214,14 +205,6 @@
         userClassSpan.textContent = `${userClass}組 店員機B`;
         loginSection.style.display = "none";
         mainSection.style.display = "block";
-
-        isFirstFetch = true;
-        fetchAndRenderOrders(); // Initial fetch
-
-        if (orderUpdateInterval) {
-          clearInterval(orderUpdateInterval);
-        }
-        orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000); // Update every 2 seconds
       }
 
       function saveOfflineQueue() {
@@ -287,6 +270,7 @@
         const userClass = localStorage.getItem("userClass");
         if (!token || !userClass) {
           logout();
+          setTimeout(fetchAndRenderOrders, 2000);  // ループは継続
           return;
         }
         try {
@@ -311,12 +295,7 @@
                 clearInterval(orderUpdateInterval);
                 orderUpdateInterval = null;
               }
-              setTimeout(() => {
-                if (!orderUpdateInterval) {
-                  fetchAndRenderOrders();
-                  orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
-                }
-              }, Math.max(delay, 1000));
+              setTimeout(fetchAndRenderOrders, Math.max(delay, 1000));
               setOnlineStatus(2); // log_allのレート制限は往々にして長い
               return;
             }
@@ -352,12 +331,7 @@
                 clearInterval(orderUpdateInterval);
                 orderUpdateInterval = null;
               }
-              setTimeout(() => {
-                if (!orderUpdateInterval) {
-                  fetchAndRenderOrders();
-                  orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
-                }
-              }, Math.max(delay, 1000));
+              setTimeout(fetchAndRenderOrders, Math.max(delay, 1000));
               return;
             }
             if (!response.ok) {
@@ -371,7 +345,10 @@
               checkData.forEach((update) => {
                 if (allOrdersData[update.order_id]) {
                   allOrdersData[update.order_id].status = update.status;
-                  // historyは追加しない（message無視）
+                  // history追加
+                  allOrdersData[update.order_id].history.push(
+                    {timestamp: update.timestamp, status: update.status, message: update.message || "", from: update.from}
+                  )
                 } else if (update.order_items) {
                   // 新規オーダー
                   allOrdersData[update.order_id] = {
@@ -380,20 +357,12 @@
                     order_items: update.order_items,
                     status: update.status,
                     history: [
-                      {
-                        timestamp: update.timestamp,
-                        status: update.status,
-                        message: update.message || "",
-                        from: update.from,
-                      },
+                      {timestamp: update.timestamp, status: update.status, message: update.message || "", from: update.from},
                     ],
                   };
                 }
               });
-              localStorage.setItem(
-                "allOrdersData",
-                JSON.stringify(allOrdersData)
-              );
+              localStorage.setItem("allOrdersData", JSON.stringify(allOrdersData));
             }
             renderTable(allOrdersData, userClass);
           }
@@ -402,6 +371,7 @@
           setOnlineStatus(1);
           renderTable(allOrdersData, userClass); // Render with potentially stale data
         }
+        setTimeout(() => {fetchAndRenderOrders();}, 2000);
       }
 
       function renderTable(ordersData, userClass) {
@@ -464,8 +434,7 @@
           (s) => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`
         ).join("");
         let controlHtml = `
-          <select class="status-select" onfocus="pauseAutoUpdate()" onchange="statusChanged(this, ${order.id})" 
-            onblur="resumeAutoUpdate()">${options}</select>
+          <select class="status-select" onchange="statusChanged(this, ${order.id})">${options}</select>
           <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" 
             ${!isNextEnabled ? "disabled" : ""}>次へ</button>`;
 
@@ -479,19 +448,6 @@
           const row = buttonElement.closest("tr");
           await updateOrderStatus(row, orderId, nextStatus, null);
         }
-      }
-
-      function pauseAutoUpdate() {
-        if (orderUpdateInterval) {
-          clearInterval(orderUpdateInterval);
-        }
-      }
-
-      function resumeAutoUpdate() {
-        if (orderUpdateInterval) {
-          clearInterval(orderUpdateInterval);
-        }
-        orderUpdateInterval = setInterval(fetchAndRenderOrders, 2000);
       }
 
       function showStatusChanger(buttonElement, orderId) {
@@ -513,7 +469,6 @@
         isUpdateInProgress = true;
 
         if (rowElement) rowElement.classList.add("updating");
-        pauseAutoUpdate();
 
         console.log(
           `Updating order ${orderId} status to ${newStatus} with message: ${
@@ -530,7 +485,6 @@
           await localUpdate(orderId, newStatus, message);
           if (rowElement) rowElement.classList.remove("updating");
           isUpdateInProgress = false;
-          resumeAutoUpdate();
           return;
         }
 
@@ -566,7 +520,6 @@
             isUpdateInProgress = false;
             setTimeout(() => {
               setOnlineStatus(0);
-              resumeAutoUpdate();
             }, Math.max(delay, 1000));
             setOnlineStatus(2); // 429の時は一時的にオフライン表示
             return;
@@ -603,7 +556,6 @@
         } finally {
           if (rowElement) rowElement.classList.remove("updating");
           isUpdateInProgress = false;
-          resumeAutoUpdate();
         }
       }
 
@@ -656,6 +608,8 @@
         }
         renderAddOrderForm();
       }
+
+      fetchAndRenderOrders(); // ループの開始 (ループ内で実行するかどうか自動判断する)
     </script>
     <script>
       const addOrderForm = document.getElementById("add-order-form");
