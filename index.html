@@ -288,7 +288,6 @@
       }
 
       async function fetchAndRenderOrders() {
-        console.log("aaa");
         const token = localStorage.getItem("authToken");
         const userClass = localStorage.getItem("userClass");
         if (!token || !userClass) {
@@ -372,7 +371,7 @@
 
         tableHead.innerHTML = "";
         const headerRow = document.createElement("tr");
-        const headers = ["注文ID", "注文時間", ...items, "ステータス"];
+        const headers = ["注文ID", "注文時間", ...items, "合計金額", "ステータス"];
         headers.forEach((text) => {
           const th = document.createElement("th");
           th.textContent = text;
@@ -394,21 +393,15 @@
           statusCell.className = "status-cell";
           statusCell.innerHTML = createStatusSelector(order);
 
-          const ordered_at = new Date(
-            Number(order.history[0].timestamp) * 1000
-          );
-          tr.innerHTML =
-            `<td>${order.id}</td><td>${ordered_at.toLocaleTimeString()}</td>` +
-            items
-              .map(
-                (item, idx) =>
-                  `<td>${
-                    (order.order_items &&
-                      order.order_items[`item_${idx + 1}`]) ||
-                    0
-                  }</td>`
-              )
-              .join("");
+          const ordered_at = new Date(Number(order.history[0].timestamp) * 1000);
+          tr.innerHTML = `<td>${order.id}</td><td>${ordered_at.toLocaleTimeString()}</td>`;
+          let sumprice = 0;
+          items.forEach((item, idx) => {
+            const count = order.order_items[`item_${idx + 1}`] || 0;
+            tr.innerHTML += `<td>${count}</td>`;
+            sumprice += count * selectedClassData.price[idx];
+          });
+          tr.innerHTML += `<td>${sumprice}円</td>`;
           tr.appendChild(statusCell);
           tableBody.appendChild(tr);
         });
