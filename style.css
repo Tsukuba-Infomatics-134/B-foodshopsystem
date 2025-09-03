@@ -154,18 +154,13 @@ tr[data-status="調理待ち"] {
     background-color: #eaf6ec; /* Paler Green */
     border-left-color: #28a745; /* Green */
 }
-tr[data-status="受け渡し済み"] {
+tr[data-status="受け渡し済み"], tr[data-status="キャンセル済み"] {
     background-color: #f8f9fa; /* Paler Grey */
     border-left-color: #6c757d; /* Grey */
     color: #6c757d;
 }
-tr[data-status="受け渡し済み"] td:not(.status-cell) {
+tr[data-status="受け渡し済み"] td:not(.status-cell), tr[data-status="キャンセル済み"] td:not(.status-cell) {
     text-decoration: line-through;
-}
-tr[data-status="キャンセル済み"] {
-    background-color: #f8f9fa98;
-    border-left-color: #6c757d; /* Grey */
-    color: #6c757d;
 }
 
 tr[data-status]:hover {
