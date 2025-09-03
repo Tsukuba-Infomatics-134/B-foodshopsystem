@@ -142,10 +142,6 @@ tr.updating {
 tr[data-status] {
     border-left: 5px solid transparent;
 }
-tr[data-status="調理済み"] {
-    background-color: #eaf6ec; /* Paler Green */
-    border-left-color: #28a745; /* Green */
-}
 tr[data-status="呼び出し待ち"] {
     background-color: #e7f2ff; /* Paler Blue */
     border-left-color: #007bff; /* Blue */
@@ -157,10 +153,6 @@ tr[data-status="呼び出し中"] {
 tr[data-status="調理待ち"] {
     background-color: #fff9e7; /* Paler Yellow */
     border-left-color: #ffc107; /* Yellow */
-}
-tr[data-status="調理中"] {
-    background-color: #fff3cd; /* Paler Orange */
-    border-left-color: #fd7e14; /* Orange */
 }
 tr[data-status="受け渡し済み"] {
     background-color: #f8f9fa; /* Paler Grey */

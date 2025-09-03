@@ -75,19 +75,18 @@
     <script>
       const API_BASE_URL_PRODUCTION = "https://api.yaakiyu.f5.si";
       const API_BASE_URL_DEV = "http://localhost:80";
-      // https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev
       let API_BASE_URL = API_BASE_URL_PRODUCTION;
 
       const classData = [
-        { name: "1組", items: ["item_1", "item_2"] },
-        { name: "2組", items: ["プレーン", "チーズ"] },
-        { name: "3組", items: ["プレーン", "みたらし"] },
-        { name: "4組", items: ["プレーン", "マンゴー"] },
+        { name: "1組", items: ["プレーン", "抹茶"] },
+        { name: "2組", items: ["豚玉", "豚玉チーズ"] },
+        { name: "3組", items: ["みたらし&アイス", "カラフルあんこ"] },
+        { name: "4組", items: ["抹茶白玉小豆", "マンゴー"] },
         { name: "5組", items: ["コンソメ", "バター醤油"] },
-        { name: "6組", items: ["明太チーズ", "プレーン"] },
+        { name: "6組", items: ["ソース", "明太もち"] },
       ];
       const statusFlow = [
-        "呼び出し待ち", "呼び出し中", "調理待ち", "調理中", "調理済み", "受け渡し済み", "キャンセル済み"
+        "呼び出し待ち", "呼び出し中", "調理待ち", "受け渡し済み", "キャンセル済み"
       ];
 
       const tableHead = document.querySelector("#order-table thead");
@@ -459,7 +458,7 @@
 
       function createStatusSelector(order) {
         // 使うべきでないときは「次へ」ボタンを無効化
-        const isNextEnabled = order.status === "呼び出し中" || order.status === "調理済み";
+        const isNextEnabled = order.status === "呼び出し中";
 
         let options = statusFlow.map(
           (s) => `<option value="${s}" ${order.status === s ? "selected" : ""}>${s}</option>`
@@ -709,7 +708,6 @@
           );
           if (quantity > 0) {
             order_items[`item_${id}`] = quantity;
-            // order_items[item] = quantity;
           }
           id++;
         });
