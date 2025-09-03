@@ -147,8 +147,8 @@ tr[data-status="呼び出し待ち"] {
     border-left-color: #007bff; /* Blue */
 }
 tr[data-status="呼び出し中"] {
-    background-color: #d1ecf1; /* Paler Cyan */
-    border-left-color: #17a2b8; /* Cyan */
+    background-color: #fff3cd; /* Paler Orange */
+    border-left-color: #fd7e14; /* Orange */
 }
 tr[data-status="調理待ち"] {
     background-color: #fff9e7; /* Paler Yellow */
