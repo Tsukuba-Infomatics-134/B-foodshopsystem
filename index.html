@@ -73,9 +73,10 @@
     </div>
 
     <script>
+      const SYSTEM_NAME = 'b';
       const API_BASE_URL_PRODUCTION = "https://api.yaakiyu.f5.si";
       const API_BASE_URL_DEV = "https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev";
-      let API_BASE_URL = API_BASE_URL_DEV;
+      let API_BASE_URL = API_BASE_URL_PRODUCTION;
 
       const classData = [
         { name: "1組", items: ["プレーン", "抹茶"], price: [200, 200] },
@@ -236,7 +237,6 @@
           offlineQueue.shift(); // Remove the successfully processed item
         }
         if (body.length > 0) {
-          const userClass = localStorage.getItem("userClass");
           fetch(`${API_BASE_URL}/change_status_multi`, {
             method: "POST",
             headers: {
@@ -245,7 +245,7 @@
             },
             body: JSON.stringify({
               body: body,
-              from_: userClass,
+              from_: SYSTEM_NAME,
             }),
           }).then(async (response) => {
             if (!response.ok) {
@@ -403,6 +403,7 @@
           });
           tr.innerHTML += `<td>${sumprice}円</td>`;
           tr.appendChild(statusCell);
+
           tr.innerHTML += `<td><strong>${order.id}</strong></td>`;
           tableBody.appendChild(tr);
         });
@@ -419,7 +420,8 @@
           <select class="status-select" onchange="statusChanged(this, ${order.id});isRenderPaused=false;"
             onfocus="isRenderPaused=true;" onblur="isRenderPaused=false;">${options}</select>
           <button class="next-status-btn" onclick="goToNextStatus(this, ${order.id}, '${order.status}')" 
-            ${!isNextEnabled ? "disabled" : ""}>次へ</button>`;
+            ${!isNextEnabled ? "disabled" : ""}>次へ</button>
+          <button class="log-btn" onclick="showLogModal(${order.id})">履歴</button>`;
 
         return `<div class="status-control-container">${controlHtml}</div>`;
       }
@@ -438,7 +440,7 @@
 
         let options = statusFlow.map((s) => `<option value="${s}">${s}</option>`).join("");
 
-        statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${orderId})">${options}</select>`;
+        statusCell.innerHTML = `<select class="status-select" onchange="statusChanged(this, ${order.id})">${options}</select>`;
         statusCell.querySelector("select").focus();
       }
 
@@ -482,6 +484,7 @@
               order_id: orderId,
               status: newStatus,
               message: message,
+              from_: SYSTEM_NAME,
             }),
           });
           if (!response.ok) {
@@ -502,7 +505,7 @@
               timestamp: Math.floor(Date.now() / 1000),
               status: newStatus,
               message: message,
-              from: localStorage.getItem("userClass"),
+              from: SYSTEM_NAME,
             });
             localStorage.setItem(
               "allOrdersData",
@@ -575,6 +578,51 @@
 
       fetchAndRenderOrders(); // ループの開始 (ループ内で実行するかどうか自動判断する)
     </script>
+    <div id="log-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeLogModal()">&times;</span>
+        <h2>注文ログ</h2>
+        <div id="log-modal-body"></div>
+      </div>
+    </div>
+    <script>
+      const logModal = document.getElementById("log-modal");
+      const logModalBody = document.getElementById("log-modal-body");
+
+      function showLogModal(orderId) {
+        const order = allOrdersData[orderId];
+        if (!order || !order.history) {
+          logModalBody.innerHTML = "<p>ログが見つかりません。</p>";
+          logModal.style.display = "block";
+          return;
+        }
+
+        let logHtml = "<ul>";
+        order.history.forEach(entry => {
+          const timestamp = new Date(Number(entry.timestamp) * 1000).toLocaleString();
+          let from_text = entry.from || '不明';
+          if (from_text === 'local') {
+            from_text = `${SYSTEM_NAME} (オフライン)`;
+          }
+          logHtml += `<li><strong>${timestamp}</strong>: ${entry.status} (操作元: ${from_text}) ${entry.message ? `- ${entry.message}` : ''}</li>`;
+        });
+        logHtml += "</ul>";
+
+        logModalBody.innerHTML = logHtml;
+        logModal.style.display = "block";
+      }
+
+      function closeLogModal() {
+        logModal.style.display = "none";
+      }
+
+      // Close modal if user clicks outside of it
+      window.onclick = function(event) {
+        if (event.target == logModal) {
+          closeLogModal();
+        }
+      }
+    </script>
     <script>
       const addOrderForm = document.getElementById("add-order-form");
       const addOrderErrorP = document.getElementById("add-order-error");
@@ -642,6 +690,7 @@
             headers: {
               "Content-Type": "application/json",
               Authorization: token,
+              from_: SYSTEM_NAME,
             },
             body: JSON.stringify({ order_items }),
           });
@@ -667,7 +716,7 @@
                 timestamp: Math.floor(Date.now() / 1000),
                 status: "呼び出し待ち",
                 message: "",
-                from: userClass,
+                from: SYSTEM_NAME,
               },
             ],
           };
