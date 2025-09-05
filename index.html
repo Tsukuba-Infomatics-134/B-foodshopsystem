@@ -74,8 +74,8 @@
 
     <script>
       const API_BASE_URL_PRODUCTION = "https://api.yaakiyu.f5.si";
-      const API_BASE_URL_DEV = "http://localhost:80";
-      let API_BASE_URL = API_BASE_URL_PRODUCTION;
+      const API_BASE_URL_DEV = "https://didactic-space-bassoon-r4wxv7xv79w4cj5g-80.app.github.dev";
+      let API_BASE_URL = API_BASE_URL_DEV;
 
       const classData = [
         { name: "1組", items: ["プレーン", "抹茶"], price: [200, 200] },
@@ -371,10 +371,10 @@
 
         tableHead.innerHTML = "";
         const headerRow = document.createElement("tr");
-        const headers = ["注文ID", "注文時間", ...items, "合計金額", "ステータス"];
+        const headers = ["注文ID", "注文時間", ...items, "合計金額", "ステータス", "注文ID"];
         headers.forEach((text) => {
           const th = document.createElement("th");
-          th.textContent = text;
+          th.innerHTML = text === "注文ID" ? "<strong>注文ID</strong>" : text;
           headerRow.appendChild(th);
         });
         tableHead.appendChild(headerRow);
@@ -394,7 +394,7 @@
           statusCell.innerHTML = createStatusSelector(order);
 
           const ordered_at = new Date(Number(order.history[0].timestamp) * 1000);
-          tr.innerHTML = `<td>${order.id}</td><td>${ordered_at.toLocaleTimeString()}</td>`;
+          tr.innerHTML = `<td><strong>${order.id}</strong></td><td>${ordered_at.toLocaleTimeString()}</td>`;
           let sumprice = 0;
           items.forEach((item, idx) => {
             const count = order.order_items[`item_${idx + 1}`] || 0;
@@ -403,6 +403,7 @@
           });
           tr.innerHTML += `<td>${sumprice}円</td>`;
           tr.appendChild(statusCell);
+          tr.innerHTML += `<td><strong>${order.id}</strong></td>`;
           tableBody.appendChild(tr);
         });
       }
