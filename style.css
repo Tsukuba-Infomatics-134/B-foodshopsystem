@@ -185,10 +185,21 @@ tr[data-status]:hover {
     box-sizing: border-box;
 }
 
-.next-status-btn, .change-status-type-btn, .log-btn {
+.next-status-btn, .change-status-type-btn {
     padding: 6px 12px;
     font-size: 1em;
     font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0; /* Prevent button from shrinking */
+}
+
+.log-btn {
+    padding: 6px 6px;
+    font-size: 0.8em;
     color: white;
     border: none;
     border-radius: 4px;
@@ -220,7 +231,7 @@ tr[data-status]:hover {
 }
 
 .log-btn {
-    background-color: #17a2b8;
+    background-color: #747c7e;
 }
 
 .log-btn:hover {
